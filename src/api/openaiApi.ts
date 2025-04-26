@@ -3,7 +3,7 @@ import axios from 'axios';
 
 // Initialize OpenAI client
 const openai = new OpenAI({
-  apiKey: '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',
+  apiKey: process.env.OPENAI_API_KEY,
   dangerouslyAllowBrowser: true, // For client-side usage (consider moving to server in production)
 });
 
