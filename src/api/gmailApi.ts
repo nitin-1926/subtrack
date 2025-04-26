@@ -40,8 +40,8 @@ const gmailApi = {
    */
   getAuthUrl: (): string => {
     // Hardcoded OAuth values
-    const clientId = process.env.VITE_GOOGLE_CLIENT_ID || '';
-    const redirectUri = process.env.VITE_GOOGLE_REDIRECT_URI || 'http://localhost:5173/email-sync';
+    const clientId = process.env.GOOGLE_CLIENT_ID || '';
+    const redirectUri = process.env.GOOGLE_REDIRECT_URI || '';
     
     console.log('Using OAuth credentials:', { clientId, redirectUri });
     
@@ -66,9 +66,9 @@ const gmailApi = {
     console.log('Exchanging code for tokens...');
     
     // Hardcoded OAuth values
-    const clientId = process.env.VITE_GOOGLE_CLIENT_ID || '';
-    const clientSecret = process.env.VITE_GOOGLE_CLIENT_SECRET || '';
-    const redirectUri = process.env.VITE_GOOGLE_REDIRECT_URI || 'http://localhost:5173/email-sync';
+    const clientId = process.env.GOOGLE_CLIENT_ID || '';
+    const clientSecret = process.env.GOOGLE_CLIENT_SECRET || '';
+    const redirectUri = process.env.GOOGLE_REDIRECT_URI || '';
 
     console.log('Using OAuth credentials for token exchange:', { clientId, redirectUri });
     
@@ -155,8 +155,8 @@ Details: ${errorText}`);
    */
   refreshAccessToken: async (refreshToken: string): Promise<{ access_token: string; expires_in: number }> => {
     // Hardcoded OAuth values
-    const clientId = process.env.VITE_GOOGLE_CLIENT_ID || '';
-    const clientSecret = process.env.VITE_GOOGLE_CLIENT_SECRET || '';
+    const clientId = process.env.GOOGLE_CLIENT_ID || '';
+    const clientSecret = process.env.GOOGLE_CLIENT_SECRET || '';
     
     console.log('Using hardcoded OAuth credentials for token refresh');
 

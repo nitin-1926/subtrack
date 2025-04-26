@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import gmailApi from '@/api/gmailApi';
 import type { GmailMessage } from '@/api/gmailApi';
+import openaiApi from '@/api/openaiApi';
 
 interface UseGmailSyncOptions {
   onAuthSuccess?: (tokens: { accessToken: string; refreshToken?: string }) => void;
@@ -13,6 +14,12 @@ interface SubscriptionCandidate {
   amount: number;
   date: string;
   confidence: number; // 0-100 score indicating confidence in the extraction
+}
+
+interface EmailBatchItem {
+  messageId: string;
+  content: string;
+  gmailAccountId?: string;
 }
 
 export function useGmailSync(options: UseGmailSyncOptions = {}) {
@@ -284,15 +291,27 @@ export function useGmailSync(options: UseGmailSyncOptions = {}) {
       
       console.log(`Sending batch of ${emailBatch.length} emails to OpenAI for analysis`);
       
+      // Get the Gmail account ID (in a real app, you'd get this from user context)
+      const gmailAccountId = 'default-account-id'; // Replace with actual account ID in production
+      
+      // Prepare batch with account ID
+      const emailBatchWithAccount = emailBatch.map(item => ({
+        ...item,
+        gmailAccountId
+      }));
+      
       // Send batch to OpenAI for analysis
-      const batchResults = await openaiApi.batchAnalyzeEmails(emailBatch);
+      const batchResults = await openaiApi.batchAnalyzeEmails(emailBatchWithAccount, gmailAccountId);
       console.log(`Received analysis for ${batchResults.length} emails`);
       
       // Process results
       for (const analysis of batchResults) {
         try {
+          // Check if this is a subscription result by checking for isSubscription property
+          const isSubscription = 'isSubscription' in analysis && analysis.isSubscription;
+          
           // Skip if no messageId or not a subscription or low confidence
-          if (!analysis.messageId || !analysis.isSubscription || analysis.confidence < 40) {
+          if (!analysis.messageId || !isSubscription || analysis.confidence < 40) {
             if (analysis.messageId) {
               console.log(`Skipping message ${analysis.messageId} - not a subscription (confidence: ${analysis.confidence})`);
             }
@@ -305,14 +324,17 @@ export function useGmailSync(options: UseGmailSyncOptions = {}) {
             continue;
           }
           
+          // Since we've confirmed this is a subscription result, we can safely cast it
+          const subscriptionResult = analysis as any; // Type assertion for simplicity
+          
           // Use OpenAI's extracted data or fallback to regex
-          const serviceName = analysis.serviceName || '';
-          const amount = analysis.amount || 0;
+          const serviceName = subscriptionResult.name || '';
+          const amount = subscriptionResult.amount || 0;
           
           // Fallback date extraction if OpenAI didn't provide one
           let billingDate = new Date().toISOString().split('T')[0];
-          if (analysis.nextBillingDate) {
-            billingDate = analysis.nextBillingDate;
+          if (subscriptionResult.nextBillingAt) {
+            billingDate = subscriptionResult.nextBillingAt.toISOString().split('T')[0];
           } else {
             // Fallback to regex extraction
             const dateMatches = messageData.body.match(/(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})/g) || [];
