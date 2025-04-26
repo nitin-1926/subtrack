@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import gmailApi from '@/api/gmailApi';
+import type { GmailMessage } from '@/api/gmailApi';
 
 interface UseGmailSyncOptions {
   onAuthSuccess?: (tokens: { accessToken: string; refreshToken?: string }) => void;
@@ -56,12 +57,25 @@ export function useGmailSync(options: UseGmailSyncOptions = {}) {
     }
   }, [options]);
 
+  // Track processed auth codes to prevent reuse
+  const [processedCodes] = useState<Set<string>>(new Set());
+
   // Handle OAuth callback
   const handleAuthCallback = useCallback(async (code: string) => {
+    // Prevent processing the same code multiple times
+    if (processedCodes.has(code)) {
+      console.log('Auth code has already been processed, ignoring duplicate callback');
+      return;
+    }
+
+    // Mark this code as being processed
+    processedCodes.add(code);
+    
     setIsLoading(true);
     setError(null);
     
     try {
+      console.log('Exchanging authorization code for tokens...');
       const tokens = await gmailApi.exchangeCodeForTokens(code);
       
       // Save tokens
@@ -78,14 +92,20 @@ export function useGmailSync(options: UseGmailSyncOptions = {}) {
         setRefreshToken(tokens.refresh_token);
       }
       
+      console.log('Authentication successful, tokens saved');
       options.onAuthSuccess?.({ 
         accessToken: tokens.access_token, 
         refreshToken: tokens.refresh_token 
       });
     } catch (err) {
       const error = err instanceof Error ? err : new Error(String(err));
+      console.error('Authentication error:', error.message);
       setError(error);
       options.onError?.(error);
+      
+      // Remove this code from processed codes if there was an error
+      // This allows retrying with a new code
+      processedCodes.delete(code);
     } finally {
       setIsLoading(false);
     }
@@ -125,46 +145,69 @@ export function useGmailSync(options: UseGmailSyncOptions = {}) {
     }
   }, [refreshToken, options]);
 
-  // Scan emails for subscriptions
-  const scanEmails = useCallback(async () => {
-    if (!accessToken) {
-      setError(new Error('Not authenticated with Gmail'));
-      return;
-    }
-    
-    if (isTokenExpired() && refreshToken) {
-      await refreshAccessTokenFn();
+  // Scan emails for subscription information
+  const scanEmails = useCallback(async (fullMessages?: GmailMessage[]) => {
+    if (!accessToken || isTokenExpired()) {
+      if (refreshToken) {
+        await refreshAccessTokenFn();
+      } else {
+        setError(new Error('Not authenticated'));
+        return [];
+      }
     }
     
     setIsLoading(true);
     setError(null);
     
     try {
-      console.log('Starting email scan for subscriptions...');
+      console.log('Scanning emails for subscription information...');
       
-      // First approach: Search for subscription-related emails
-      const response = await gmailApi.searchSubscriptionEmails(accessToken);
-      console.log(`Found ${response.messages?.length || 0} potential subscription emails`);
+      let messages: GmailMessage[] = [];
       
-      // Determine how many messages to process (max 100 for performance)
-      const messagesToProcess = response.messages?.slice(0, 100) || [];
-      
-      if (messagesToProcess.length === 0) {
-        console.log('No subscription-related emails found');
-        return [];
+      // Use provided fullMessages if available, otherwise fetch them
+      if (fullMessages && fullMessages.length > 0) {
+        console.log(`Using ${fullMessages.length} provided messages`);
+        messages = fullMessages;
+      } else {
+        // First, get list of potential subscription emails
+        const response = await gmailApi.searchSubscriptionEmails(accessToken);
+        
+        if (!response.messages || response.messages.length === 0) {
+          console.log('No potential subscription emails found');
+          return [];
+        }
+        
+        console.log(`Found ${response.messages.length} potential subscription emails`);
+        
+        // Limit the number of messages to process to avoid overloading
+        const MAX_MESSAGES = 50;
+        const messagesToProcess = response.messages.slice(0, MAX_MESSAGES);
+        
+        if (messagesToProcess.length < response.messages.length) {
+          console.log(`Processing only ${messagesToProcess.length} out of ${response.messages.length} messages`);
+        }
+        
+        // Get message IDs to process in batch
+        const messageIds = messagesToProcess.map(msg => msg.id);
+        
+        // Process messages in batches
+        console.log(`Processing ${messageIds.length} messages in batch`);
+        messages = await gmailApi.getFullMessages(accessToken, messageIds);
+        console.log(`Retrieved ${messages.length} full messages`);
       }
-      
-      // Get message IDs to process in batch
-      const messageIds = messagesToProcess.map(msg => msg.id);
-      
-      // Process messages in batches
-      console.log(`Processing ${messageIds.length} messages in batch`);
-      const messages = await gmailApi.batchGetMessages(accessToken, messageIds);
-      console.log(`Retrieved ${messages.length} full messages`);
       
       const candidates: SubscriptionCandidate[] = [];
       
-      // Process each message
+      // Import OpenAI API client
+      const openaiApi = (await import('@/api/openaiApi')).default;
+      
+      // Prepare batch of emails for OpenAI analysis
+      const emailBatch: { messageId: string; content: string }[] = [];
+      const messageMap: Record<string, { body: string; from: string; subject: string; date: string }> = {};
+      
+      console.log('Preparing email batch for analysis...');
+      
+      // Process each message to extract content
       for (const message of messages) {
         try {
           // Extract headers
@@ -173,88 +216,128 @@ export function useGmailSync(options: UseGmailSyncOptions = {}) {
           const from = headers.find(h => h.name.toLowerCase() === 'from')?.value || '';
           const date = headers.find(h => h.name.toLowerCase() === 'date')?.value || '';
           
-          // Extract email body (simplified)
+          // Extract email body and clean it
           let body = '';
+          let htmlBody = '';
+          
+          // Extract body content from the message
           if (message.payload?.body?.data) {
             // Base64 decode
             body = atob(message.payload.body.data.replace(/-/g, '+').replace(/_/g, '/'));
           } else if (message.payload?.parts) {
-            // Try to find text part
-            const textPart = message.payload.parts.find(part => 
-              part.mimeType === 'text/plain' || part.mimeType === 'text/html'
-            );
+            // Try to find text parts
+            const textPart = message.payload.parts.find(part => part.mimeType === 'text/plain');
+            const htmlPart = message.payload.parts.find(part => part.mimeType === 'text/html');
+            
+            // Prefer plain text over HTML for analysis
             if (textPart?.body?.data) {
               body = atob(textPart.body.data.replace(/-/g, '+').replace(/_/g, '/'));
+            } else if (htmlPart?.body?.data) {
+              htmlBody = atob(htmlPart.body.data.replace(/-/g, '+').replace(/_/g, '/'));
+              // Simple HTML to text conversion (remove tags)
+              body = htmlBody.replace(/<[^>]*>/g, ' ')
+                           .replace(/\s+/g, ' ')
+                           .trim();
             }
           }
           
-          // Extract potential subscription info
-          const amountMatches = body.match(/\$(\d+\.\d{2})/g) || [];
-          const dateMatches = body.match(/(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})/g) || [];
-          
-          // Extract potential service name
-          let serviceName = '';
-          if (from) {
-            // Try to extract company name from email address
-            const fromMatch = from.match(/[^@<>]+@([^@.]+)\./i);
-            if (fromMatch && fromMatch[1]) {
-              serviceName = fromMatch[1].charAt(0).toUpperCase() + fromMatch[1].slice(1);
-            }
-          }
-          
-          // If we couldn't extract from email, try subject
-          if (!serviceName && subject) {
-            // Remove common prefixes like "Your receipt from" or "Invoice:"
-            serviceName = subject
-              .replace(/^(Your|Receipt|Invoice|Payment|Billing|from|:)\s+/i, '')
-              .split(' ')
-              .slice(0, 2)
-              .join(' ');
-          }
-          
-          // Skip if we couldn't extract a service name or amount
-          if (!serviceName || amountMatches.length === 0) {
+          // Skip empty messages
+          if (!body && !htmlBody) {
+            console.log(`Skipping message ${message.id} - no content found`);
             continue;
           }
           
-          // Extract the first amount found
-          const amountStr = amountMatches[0];
-          const amount = parseFloat(amountStr.replace('$', ''));
+          // Prepare email content for OpenAI analysis
+          const emailContent = [
+            `From: ${from}`,
+            `Subject: ${subject}`,
+            `Date: ${date}`,
+            `\n\nBody:\n${body}`
+          ].join('\n');
           
-          // Use the first date found or current date
+          // Limit content length to avoid token limits
+          const MAX_CONTENT_LENGTH = 4000;
+          const truncatedContent = emailContent.length > MAX_CONTENT_LENGTH 
+            ? emailContent.substring(0, MAX_CONTENT_LENGTH) + '... [truncated]'
+            : emailContent;
+          
+          // Add to batch
+          emailBatch.push({
+            messageId: message.id,
+            content: truncatedContent
+          });
+          
+          // Store message data for later use
+          messageMap[message.id] = { body, from, subject, date };
+          
+        } catch (err) {
+          console.error(`Error processing message ${message.id}:`, err);
+          // Continue with next message
+        }
+      }
+      
+      // Skip if no emails to analyze
+      if (emailBatch.length === 0) {
+        console.log('No valid emails to analyze');
+        return [];
+      }
+      
+      console.log(`Sending batch of ${emailBatch.length} emails to OpenAI for analysis`);
+      
+      // Send batch to OpenAI for analysis
+      const batchResults = await openaiApi.batchAnalyzeEmails(emailBatch);
+      console.log(`Received analysis for ${batchResults.length} emails`);
+      
+      // Process results
+      for (const analysis of batchResults) {
+        try {
+          // Skip if no messageId or not a subscription or low confidence
+          if (!analysis.messageId || !analysis.isSubscription || analysis.confidence < 40) {
+            if (analysis.messageId) {
+              console.log(`Skipping message ${analysis.messageId} - not a subscription (confidence: ${analysis.confidence})`);
+            }
+            continue;
+          }
+          
+          const messageData = messageMap[analysis.messageId];
+          if (!messageData) {
+            console.error(`Message data not found for ID: ${analysis.messageId}`);
+            continue;
+          }
+          
+          // Use OpenAI's extracted data or fallback to regex
+          const serviceName = analysis.serviceName || '';
+          const amount = analysis.amount || 0;
+          
+          // Fallback date extraction if OpenAI didn't provide one
           let billingDate = new Date().toISOString().split('T')[0];
-          if (dateMatches.length > 0) {
-            billingDate = dateMatches[0];
+          if (analysis.nextBillingDate) {
+            billingDate = analysis.nextBillingDate;
+          } else {
+            // Fallback to regex extraction
+            const dateMatches = messageData.body.match(/(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})/g) || [];
+            if (dateMatches.length > 0) {
+              billingDate = dateMatches[0];
+            }
           }
           
-          // Calculate a confidence score
-          let confidence = 50; // Base confidence
-          
-          // Increase confidence if subject contains subscription-related terms
-          if (subject.match(/subscri|renew|billing|payment|receipt/i)) {
-            confidence += 20;
-          }
-          
-          // Increase confidence if we found both amount and date
-          if (amountMatches.length > 0 && dateMatches.length > 0) {
-            confidence += 20;
-          }
-          
-          // Increase confidence if amount is a "round" number like 9.99
-          if (amount.toFixed(2).match(/\.(99|95|00)$/)) {
-            confidence += 10;
-          }
+          console.log('Candidate:', { 
+            messageId: analysis.messageId,
+            serviceName, 
+            amount, 
+            date: billingDate, 
+            confidence: analysis.confidence 
+          });
           
           candidates.push({
-            messageId: message.id,
+            messageId: analysis.messageId,
             serviceName,
             amount,
             date: billingDate,
-            confidence: Math.min(confidence, 100), // Cap at 100
+            confidence: analysis.confidence
           });
         } catch (err) {
-          console.error('Error processing message:', err);
-          // Continue with next message
+          console.error('Error processing analysis result:', err);
         }
       }
       

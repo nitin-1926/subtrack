@@ -58,12 +58,16 @@ const EmailSyncPage = () => {
     }
   });
 
+  // State to store messages
+  const [messages, setMessages] = useState([]);
+  const [accessToken, setAccessToken] = useState(localStorage.getItem('gmail_access_token'));
+  
   const handleSync = async (accountId: string) => {
     setSyncingId(accountId);
     setSyncStatus("syncing");
     setSyncProgress(0);
     
-    // Simulate progress updates
+    // Progress update interval
     const interval = setInterval(() => {
       setSyncProgress(prev => {
         if (prev >= 100) {
@@ -75,19 +79,47 @@ const EmailSyncPage = () => {
     }, 300);
     
     try {
-      if (isAuthenticated) {
-        // Scan emails using Gmail API
-        const results = await scanEmails();
-        console.log('Scan results:', results);
+      if (isAuthenticated && accessToken) {
+        console.log('Starting Gmail sync with token:', accessToken);
+        setSyncProgress(10);
         
-        // If we have subscription candidates, we can add them to the system
-        if (subscriptionCandidates.length > 0) {
-          // Here you would typically send these to your backend
-          // For now we'll just log them
-          console.log('Found subscription candidates:', subscriptionCandidates);
+        // 1. First get messages directly using Gmail API
+        const gmailApi = await import('@/api/gmailApi').then(mod => mod.default);
+        
+        // Get last 100 messages (adjust as needed)
+        const messageResponse = await gmailApi.getMessages(accessToken, '', 50);
+        console.log('Messages response:', messageResponse);
+        setSyncProgress(50);
+        
+        if (messageResponse.messages && messageResponse.messages.length > 0) {
+          // Store messages for display
+          setMessages(messageResponse.messages);
+          
+          // 2. Get message details in batches
+          const messageIds = messageResponse.messages.map(msg => msg.id);
+          console.log(`Found ${messageIds.length} messages, fetching details...`);
+          
+          // Get full message details
+          const fullMessages = await gmailApi.getFullMessages(accessToken, messageIds);
+          console.log('Full messages:', fullMessages);
+          console.log(`Retrieved ${fullMessages.length} full messages`);
+          setSyncProgress(80);
+          
+          // 3. Process messages to find subscriptions
+          const results = await scanEmails(fullMessages);
+          console.log('Subscription scan results:', results);
+          
+          // If we have subscription candidates, we can add them to the system
+          if (subscriptionCandidates.length > 0) {
+            console.log('Found subscription candidates:', subscriptionCandidates);
+            // Here you would typically send these to your backend
+          }
+        } else {
+          console.log('No messages found');
         }
       } else {
         // Fallback to mock sync if not authenticated with Gmail
+        console.log('Not authenticated with Gmail, using mock data');
         await syncAccount(accountId);
       }
       

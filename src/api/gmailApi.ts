@@ -6,7 +6,7 @@ const GOOGLE_AUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth';
 const GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token';
 
 // Types for Gmail API responses
-interface GmailMessage {
+export interface GmailMessage {
   id: string;
   threadId: string;
   labelIds: string[];
@@ -19,7 +19,7 @@ interface GmailMessage {
   internalDate?: string;
 }
 
-interface GmailListResponse {
+export interface GmailListResponse {
   messages: Array<{ id: string; threadId: string }>;
   nextPageToken?: string;
   resultSizeEstimate: number;
@@ -41,7 +41,7 @@ const gmailApi = {
   getAuthUrl: (): string => {
     // Hardcoded OAuth values
     const clientId = '895906554670-9e92gjs809fr51q9ni1r4unh2b0e3pii.apps.googleusercontent.com';
-    const redirectUri = 'http://localhost:8080/email-sync';
+    const redirectUri = 'http://localhost:5173/email-sync';
     
     console.log('Using OAuth credentials:', { clientId, redirectUri });
     
@@ -68,7 +68,7 @@ const gmailApi = {
     // Hardcoded OAuth values
     const clientId = '895906554670-9e92gjs809fr51q9ni1r4unh2b0e3pii.apps.googleusercontent.com';
     const clientSecret = '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';
-    const redirectUri = 'http://localhost:8080/email-sync';
+    const redirectUri = 'http://localhost:5173/email-sync';
 
     console.log('Using OAuth credentials for token exchange:', { clientId, redirectUri });
     
@@ -84,19 +84,70 @@ const gmailApi = {
       grant_type: 'authorization_code',
     });
 
-    const response = await fetch(GOOGLE_TOKEN_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: params.toString(),
-    });
+    // Retry mechanism
+    const MAX_RETRIES = 3;
+    let retries = 0;
+    let lastError: Error | null = null;
+    
+    while (retries < MAX_RETRIES) {
+      try {
+        console.log(`Token exchange attempt ${retries + 1}/${MAX_RETRIES}`);
+        console.log('Sending token exchange request to:', GOOGLE_TOKEN_URL);
+        
+        const response = await fetch(GOOGLE_TOKEN_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: params.toString(),
+        });
 
-    if (!response.ok) {
-      throw new Error(`Failed to exchange code for tokens: ${response.statusText}`);
+        if (!response.ok) {
+          // Try to get more detailed error information
+          const errorText = await response.text();
+          console.error(`Attempt ${retries + 1}/${MAX_RETRIES} failed with status:`, response.status, response.statusText);
+          console.error('Error details:', errorText);
+          
+          // Create error to throw if all retries fail
+          lastError = new Error(`Failed to exchange code for tokens: ${response.status} ${response.statusText}
+Details: ${errorText}`);
+          
+          // If we have retries left, continue to next attempt
+          retries++;
+          if (retries < MAX_RETRIES) {
+            console.log(`Retrying in 1 second... (${retries}/${MAX_RETRIES})`);
+            await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second before retry
+            continue;
+          } else {
+            // No more retries, throw the error
+            throw lastError;
+          }
+        }
+
+        // Success case
+        const data = await response.json();
+        console.log('Token exchange successful:', { ...data, access_token: '***REDACTED***' });
+        return data;
+      } catch (error) {
+        // If this is a network error and we have retries left, try again
+        if (error instanceof TypeError && retries < MAX_RETRIES) {
+          console.error(`Network error on attempt ${retries + 1}/${MAX_RETRIES}:`, error);
+          retries++;
+          console.log(`Retrying in 1 second... (${retries}/${MAX_RETRIES})`);
+          await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second before retry
+        } else if (retries >= MAX_RETRIES) {
+          // No more retries, rethrow the error
+          console.error(`All ${MAX_RETRIES} attempts failed. Last error:`, error);
+          throw lastError || error;
+        } else {
+          // Other errors, just rethrow
+          throw error;
+        }
+      }
     }
-
-    return response.json();
+    
+    // This should never be reached due to the while loop conditions
+    throw lastError || new Error('Failed to exchange code for tokens after maximum retries');
   },
 
   /**
@@ -134,7 +185,7 @@ const gmailApi = {
   /**
    * Get list of Gmail messages
    */
-  getMessages: async (accessToken: string, query = '', maxResults = 100, pageToken?: string): Promise<GmailListResponse> => {
+  getMessages: async (accessToken: string, query = '', maxResults = 50, pageToken?: string): Promise<GmailListResponse> => {
     const url = new URL(`${GMAIL_API_BASE_URL}/users/me/messages`);
     
     const params: Record<string, string> = {
@@ -197,55 +248,41 @@ const gmailApi = {
   },
 
   /**
-   * Get messages in batches of 100 (maximum allowed by Gmail API)
+   * Get full message details for multiple message IDs (one at a time)
    */
-  batchGetMessages: async (accessToken: string, messageIds: string[]): Promise<GmailMessage[]> => {
-    // Process in batches of 100 (Gmail API limit)
-    const batchSize = 100;
-    const batches = [];
+  getFullMessages: async (accessToken: string, messageIds: string[]): Promise<GmailMessage[]> => {
+    console.log(`Fetching ${messageIds.length} full messages one by one`);
     
-    // Split messageIds into batches of 100
-    for (let i = 0; i < messageIds.length; i += batchSize) {
-      batches.push(messageIds.slice(i, i + batchSize));
-    }
-    
-    console.log(`Processing ${messageIds.length} messages in ${batches.length} batches`);
-    
-    // Process each batch
     const allMessages: GmailMessage[] = [];
+    const totalMessages = messageIds.length;
     
-    for (let i = 0; i < batches.length; i++) {
-      const batch = batches[i];
-      console.log(`Processing batch ${i + 1}/${batches.length} with ${batch.length} messages`);
+    // Process messages one by one with progress logging
+    for (let i = 0; i < messageIds.length; i++) {
+      const messageId = messageIds[i];
       
-      const batchIds = batch.join(',');
-      const url = `${GMAIL_API_BASE_URL}/users/me/messages/batchGet?ids=${batchIds}`;
-      
-      const response = await fetch(url, {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
-      
-      if (!response.ok) {
-        throw new Error(`Failed to fetch batch of messages: ${response.statusText}`);
+      // Log progress every 10 messages or at the beginning/end
+      if (i === 0 || i === messageIds.length - 1 || i % 10 === 0) {
+        console.log(`Fetching message ${i + 1}/${totalMessages} (${Math.round((i + 1) / totalMessages * 100)}%)`);
       }
       
-      const data = await response.json();
-      
-      // Extract messages from the batch response
-      if (data.messages && Array.isArray(data.messages)) {
-        allMessages.push(...data.messages);
+      try {
+        // Get individual message
+        const message = await gmailApi.getMessage(accessToken, messageId);
+        allMessages.push(message);
+      } catch (error) {
+        console.error(`Error fetching message ${messageId}:`, error);
+        // Continue with other messages even if one fails
       }
     }
     
+    console.log(`Successfully fetched ${allMessages.length}/${totalMessages} messages`);
     return allMessages;
   },
 
   /**
-   * Get the last 500 messages from Gmail
+   * Get the last messages from Gmail (limited to avoid overloading)
    */
-  getLastMessages: async (accessToken: string, maxResults = 500): Promise<GmailMessage[]> => {
+  getLastMessages: async (accessToken: string, maxResults = 50): Promise<GmailMessage[]> => {
     console.log(`Fetching last ${maxResults} messages from Gmail`);
     
     // First get the message IDs
@@ -259,8 +296,8 @@ const gmailApi = {
     const messageIds = response.messages.map(msg => msg.id);
     console.log(`Found ${messageIds.length} message IDs`);
     
-    // Then get the full messages in batches
-    return gmailApi.batchGetMessages(accessToken, messageIds);
+    // Get full message details one by one
+    return gmailApi.getFullMessages(accessToken, messageIds);
   },
 
   /**
