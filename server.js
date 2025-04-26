@@ -208,6 +208,370 @@ app.get('/api/gmail-accounts', authenticate, async (req, res) => {
   }
 });
 
+// Subscription routes
+app.get('/api/subscriptions', authenticate, async (req, res) => {
+  try {
+    const subscriptions = await prisma.subscription.findMany({
+      where: {
+        gmailAccount: {
+          userId: req.user.id
+        }
+      },
+      include: {
+        gmailAccount: {
+          select: {
+            email: true
+          }
+        }
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    });
+    
+    res.status(200).json(subscriptions);
+  } catch (error) {
+    console.error('Get subscriptions error:', error);
+    res.status(500).json({ message: 'Failed to get subscriptions' });
+  }
+});
+
+app.get('/api/subscriptions/:id', authenticate, async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const subscription = await prisma.subscription.findFirst({
+      where: {
+        id,
+        gmailAccount: {
+          userId: req.user.id
+        }
+      },
+      include: {
+        gmailAccount: {
+          select: {
+            email: true
+          }
+        }
+      }
+    });
+    
+    if (!subscription) {
+      return res.status(404).json({ message: 'Subscription not found' });
+    }
+    
+    res.status(200).json(subscription);
+  } catch (error) {
+    console.error('Get subscription error:', error);
+    res.status(500).json({ message: 'Failed to get subscription' });
+  }
+});
+
+app.post('/api/subscriptions', authenticate, async (req, res) => {
+  try {
+    const { 
+      gmailAccountId, 
+      name, 
+      amount, 
+      currency = 'USD', 
+      frequency = 'MONTHLY', 
+      category, 
+      lastBilledAt, 
+      nextBillingAt, 
+      status = 'ACTIVE' 
+    } = req.body;
+    
+    // Verify the Gmail account belongs to the user
+    const gmailAccount = await prisma.gmailAccount.findFirst({
+      where: {
+        id: gmailAccountId,
+        userId: req.user.id
+      }
+    });
+    
+    if (!gmailAccount) {
+      return res.status(403).json({ message: 'Gmail account not found or not authorized' });
+    }
+    
+    const subscription = await prisma.subscription.create({
+      data: {
+        gmailAccountId,
+        name,
+        amount: parseFloat(amount),
+        currency,
+        frequency,
+        category,
+        lastBilledAt: lastBilledAt ? new Date(lastBilledAt) : null,
+        nextBillingAt: nextBillingAt ? new Date(nextBillingAt) : null,
+        status
+      }
+    });
+    
+    res.status(201).json(subscription);
+  } catch (error) {
+    console.error('Create subscription error:', error);
+    res.status(500).json({ message: 'Failed to create subscription' });
+  }
+});
+
+app.put('/api/subscriptions/:id', authenticate, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { 
+      name, 
+      amount, 
+      currency, 
+      frequency, 
+      category, 
+      lastBilledAt, 
+      nextBillingAt, 
+      status 
+    } = req.body;
+    
+    // Verify the subscription belongs to the user
+    const existingSubscription = await prisma.subscription.findFirst({
+      where: {
+        id,
+        gmailAccount: {
+          userId: req.user.id
+        }
+      }
+    });
+    
+    if (!existingSubscription) {
+      return res.status(404).json({ message: 'Subscription not found or not authorized' });
+    }
+    
+    const updatedSubscription = await prisma.subscription.update({
+      where: { id },
+      data: {
+        name: name !== undefined ? name : undefined,
+        amount: amount !== undefined ? parseFloat(amount) : undefined,
+        currency: currency !== undefined ? currency : undefined,
+        frequency: frequency !== undefined ? frequency : undefined,
+        category: category !== undefined ? category : undefined,
+        lastBilledAt: lastBilledAt !== undefined ? new Date(lastBilledAt) : undefined,
+        nextBillingAt: nextBillingAt !== undefined ? new Date(nextBillingAt) : undefined,
+        status: status !== undefined ? status : undefined
+      }
+    });
+    
+    res.status(200).json(updatedSubscription);
+  } catch (error) {
+    console.error('Update subscription error:', error);
+    res.status(500).json({ message: 'Failed to update subscription' });
+  }
+});
+
+app.delete('/api/subscriptions/:id', authenticate, async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // Verify the subscription belongs to the user
+    const existingSubscription = await prisma.subscription.findFirst({
+      where: {
+        id,
+        gmailAccount: {
+          userId: req.user.id
+        }
+      }
+    });
+    
+    if (!existingSubscription) {
+      return res.status(404).json({ message: 'Subscription not found or not authorized' });
+    }
+    
+    await prisma.subscription.delete({
+      where: { id }
+    });
+    
+    res.status(200).json({ message: 'Subscription deleted successfully' });
+  } catch (error) {
+    console.error('Delete subscription error:', error);
+    res.status(500).json({ message: 'Failed to delete subscription' });
+  }
+});
+
+// Expense routes
+app.get('/api/expenses', authenticate, async (req, res) => {
+  try {
+    const expenses = await prisma.expense.findMany({
+      where: {
+        gmailAccount: {
+          userId: req.user.id
+        }
+      },
+      include: {
+        gmailAccount: {
+          select: {
+            email: true
+          }
+        }
+      },
+      orderBy: {
+        date: 'desc'
+      }
+    });
+    
+    res.status(200).json(expenses);
+  } catch (error) {
+    console.error('Get expenses error:', error);
+    res.status(500).json({ message: 'Failed to get expenses' });
+  }
+});
+
+app.get('/api/expenses/:id', authenticate, async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const expense = await prisma.expense.findFirst({
+      where: {
+        id,
+        gmailAccount: {
+          userId: req.user.id
+        }
+      },
+      include: {
+        gmailAccount: {
+          select: {
+            email: true
+          }
+        }
+      }
+    });
+    
+    if (!expense) {
+      return res.status(404).json({ message: 'Expense not found' });
+    }
+    
+    res.status(200).json(expense);
+  } catch (error) {
+    console.error('Get expense error:', error);
+    res.status(500).json({ message: 'Failed to get expense' });
+  }
+});
+
+app.post('/api/expenses', authenticate, async (req, res) => {
+  try {
+    const { 
+      gmailAccountId, 
+      amount, 
+      currency = 'USD', 
+      merchant, 
+      category, 
+      date, 
+      description, 
+      receiptId 
+    } = req.body;
+    
+    // Verify the Gmail account belongs to the user
+    const gmailAccount = await prisma.gmailAccount.findFirst({
+      where: {
+        id: gmailAccountId,
+        userId: req.user.id
+      }
+    });
+    
+    if (!gmailAccount) {
+      return res.status(403).json({ message: 'Gmail account not found or not authorized' });
+    }
+    
+    const expense = await prisma.expense.create({
+      data: {
+        gmailAccountId,
+        amount: parseFloat(amount),
+        currency,
+        merchant,
+        category,
+        date: new Date(date),
+        description,
+        receiptId
+      }
+    });
+    
+    res.status(201).json(expense);
+  } catch (error) {
+    console.error('Create expense error:', error);
+    res.status(500).json({ message: 'Failed to create expense' });
+  }
+});
+
+app.put('/api/expenses/:id', authenticate, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { 
+      amount, 
+      currency, 
+      merchant, 
+      category, 
+      date, 
+      description, 
+      receiptId 
+    } = req.body;
+    
+    // Verify the expense belongs to the user
+    const existingExpense = await prisma.expense.findFirst({
+      where: {
+        id,
+        gmailAccount: {
+          userId: req.user.id
+        }
+      }
+    });
+    
+    if (!existingExpense) {
+      return res.status(404).json({ message: 'Expense not found or not authorized' });
+    }
+    
+    const updatedExpense = await prisma.expense.update({
+      where: { id },
+      data: {
+        amount: amount !== undefined ? parseFloat(amount) : undefined,
+        currency: currency !== undefined ? currency : undefined,
+        merchant: merchant !== undefined ? merchant : undefined,
+        category: category !== undefined ? category : undefined,
+        date: date !== undefined ? new Date(date) : undefined,
+        description: description !== undefined ? description : undefined,
+        receiptId: receiptId !== undefined ? receiptId : undefined
+      }
+    });
+    
+    res.status(200).json(updatedExpense);
+  } catch (error) {
+    console.error('Update expense error:', error);
+    res.status(500).json({ message: 'Failed to update expense' });
+  }
+});
+
+app.delete('/api/expenses/:id', authenticate, async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // Verify the expense belongs to the user
+    const existingExpense = await prisma.expense.findFirst({
+      where: {
+        id,
+        gmailAccount: {
+          userId: req.user.id
+        }
+      }
+    });
+    
+    if (!existingExpense) {
+      return res.status(404).json({ message: 'Expense not found or not authorized' });
+    }
+    
+    await prisma.expense.delete({
+      where: { id }
+    });
+    
+    res.status(200).json({ message: 'Expense deleted successfully' });
+  } catch (error) {
+    console.error('Delete expense error:', error);
+    res.status(500).json({ message: 'Failed to delete expense' });
+  }
+});
+
 // Serve static assets in production
 if (process.env.NODE_ENV === 'production') {
   app.use(express.static(path.join(__dirname, 'dist')));
