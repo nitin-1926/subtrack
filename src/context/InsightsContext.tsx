@@ -1,7 +1,6 @@
 import React, { createContext, useState, useEffect, ReactNode } from "react";
 import { 
   GmailAccount, 
-  Newsletter, 
   Expense, 
   InsightSummary,
   CategoryBreakdown,
@@ -35,82 +34,6 @@ const MOCK_GMAIL_ACCOUNTS: GmailAccount[] = [
     connected: false,
     lastSynced: null,
     avatarUrl: "https://ui-avatars.com/api/?name=Personal+Account&background=10B981&color=fff"
-  }
-];
-
-// Mock data for newsletters
-const MOCK_NEWSLETTERS: Newsletter[] = [
-  {
-    id: "n1",
-    sender: "Medium Daily Digest",
-    subject: "5 Stories to Read Today",
-    receivedAt: "2025-04-26T08:30:00Z",
-    category: "Technology",
-    read: false,
-    starred: true,
-    snippet: "Discover the latest in tech innovation and software development trends...",
-    logoUrl: "https://logo.clearbit.com/medium.com",
-    accountId: "1"
-  },
-  {
-    id: "n2",
-    sender: "The New York Times",
-    subject: "Breaking News: Latest Updates",
-    receivedAt: "2025-04-25T19:15:00Z",
-    category: "News",
-    read: true,
-    starred: false,
-    snippet: "The latest developments in politics, economics, and global affairs...",
-    logoUrl: "https://logo.clearbit.com/nytimes.com",
-    accountId: "1"
-  },
-  {
-    id: "n3",
-    sender: "Product Hunt Daily",
-    subject: "Today's Top Products",
-    receivedAt: "2025-04-26T07:00:00Z",
-    category: "Technology",
-    read: false,
-    starred: false,
-    snippet: "Discover the latest products and tools that are trending today...",
-    logoUrl: "https://logo.clearbit.com/producthunt.com",
-    accountId: "1"
-  },
-  {
-    id: "n4",
-    sender: "Harvard Business Review",
-    subject: "Leadership Insights",
-    receivedAt: "2025-04-24T12:30:00Z",
-    category: "Business",
-    read: true,
-    starred: true,
-    snippet: "Strategies for effective leadership in today's dynamic business environment...",
-    logoUrl: "https://logo.clearbit.com/hbr.org",
-    accountId: "2"
-  },
-  {
-    id: "n5",
-    sender: "Smashing Magazine",
-    subject: "Web Development Newsletter",
-    receivedAt: "2025-04-25T09:45:00Z",
-    category: "Technology",
-    read: false,
-    starred: false,
-    snippet: "The latest trends and techniques in web development and design...",
-    logoUrl: "https://logo.clearbit.com/smashingmagazine.com",
-    accountId: "2"
-  },
-  {
-    id: "n6",
-    sender: "Morning Brew",
-    subject: "Your Daily Digest",
-    receivedAt: "2025-04-26T06:15:00Z",
-    category: "Business",
-    read: false,
-    starred: false,
-    snippet: "The latest business news and market updates delivered in a digestible format...",
-    logoUrl: "https://logo.clearbit.com/morningbrew.com",
-    accountId: "1"
   }
 ];
 
@@ -188,6 +111,70 @@ const MOCK_EXPENSES: Expense[] = [
   }
 ];
 
+// Mock data for subscriptions
+const MOCK_SUBSCRIPTIONS: Subscription[] = [
+  {
+    id: "1",
+    serviceName: "Netflix",
+    amount: 15.99,
+    billingDate: "2025-05-15",
+    status: "active",
+    category: "Entertainment",
+    logoUrl: "https://logo.clearbit.com/netflix.com",
+    userId: "1",
+    createdAt: "2025-01-01T00:00:00Z",
+    updatedAt: "2025-01-01T00:00:00Z",
+  },
+  {
+    id: "2",
+    serviceName: "Spotify",
+    amount: 9.99,
+    billingDate: "2025-05-20",
+    status: "active",
+    category: "Music",
+    logoUrl: "https://logo.clearbit.com/spotify.com",
+    userId: "1",
+    createdAt: "2025-01-01T00:00:00Z",
+    updatedAt: "2025-01-01T00:00:00Z",
+  },
+  {
+    id: "3",
+    serviceName: "Adobe Creative Cloud",
+    amount: 52.99,
+    billingDate: "2025-05-05",
+    status: "active",
+    category: "Software",
+    logoUrl: "https://logo.clearbit.com/adobe.com",
+    userId: "1",
+    createdAt: "2025-01-01T00:00:00Z",
+    updatedAt: "2025-01-01T00:00:00Z",
+  },
+  {
+    id: "4",
+    serviceName: "Disney+",
+    amount: 7.99,
+    billingDate: "2025-05-10",
+    status: "active",
+    category: "Entertainment",
+    logoUrl: "https://logo.clearbit.com/disneyplus.com",
+    userId: "2",
+    createdAt: "2025-01-01T00:00:00Z",
+    updatedAt: "2025-01-01T00:00:00Z",
+  },
+  {
+    id: "5",
+    serviceName: "GitHub Pro",
+    amount: 9.99,
+    billingDate: "2025-05-27",
+    status: "active",
+    category: "Software",
+    logoUrl: "https://logo.clearbit.com/github.com",
+    userId: "2",
+    createdAt: "2025-01-01T00:00:00Z",
+    updatedAt: "2025-01-01T00:00:00Z",
+  }
+];
+
 // Chart colors
 const COLORS = [
   "#8B5CF6", // Brand purple
@@ -203,14 +190,12 @@ const COLORS = [
 
 export interface InsightsContextType {
   gmailAccounts: GmailAccount[];
-  newsletters: Newsletter[];
   expenses: Expense[];
   subscriptions: Subscription[];
   insightSummary: InsightSummary;
   categoryBreakdowns: {
     subscriptions: CategoryBreakdown[];
     expenses: CategoryBreakdown[];
-    newsletters: CategoryBreakdown[];
   };
   timelineData: {
     expenses: TimelineData[];
@@ -235,7 +220,6 @@ export const InsightsProvider: React.FC<InsightsProviderProps> = ({
   subscriptionsData = [] 
 }) => {
   const [gmailAccounts, setGmailAccounts] = useState<GmailAccount[]>([]);
-  const [newsletters, setNewsletters] = useState<Newsletter[]>([]);
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [subscriptions, setSubscriptions] = useState<Subscription[]>(subscriptionsData);
   const [isLoading, setIsLoading] = useState(true);
@@ -247,12 +231,11 @@ export const InsightsProvider: React.FC<InsightsProviderProps> = ({
       await new Promise((resolve) => setTimeout(resolve, 1000));
       
       setGmailAccounts(MOCK_GMAIL_ACCOUNTS);
-      setNewsletters(MOCK_NEWSLETTERS);
       setExpenses(MOCK_EXPENSES);
       
       // Only set subscriptions if none were provided
       if (subscriptionsData.length === 0) {
-        // We would fetch subscriptions here if not provided
+        setSubscriptions(MOCK_SUBSCRIPTIONS);
       }
       
       setIsLoading(false);
@@ -265,8 +248,6 @@ export const InsightsProvider: React.FC<InsightsProviderProps> = ({
   const insightSummary: InsightSummary = {
     totalSubscriptions: subscriptions.length,
     totalSubscriptionAmount: subscriptions.reduce((total, sub) => total + sub.amount, 0),
-    totalNewsletters: newsletters.length,
-    unreadNewsletters: newsletters.filter(n => !n.read).length,
     totalExpenses: expenses.length,
     monthlyExpenseAmount: expenses.reduce((total, exp) => total + exp.amount, 0),
     connectedAccounts: gmailAccounts.filter(acc => acc.connected).length
@@ -291,15 +272,6 @@ export const InsightsProvider: React.FC<InsightsProviderProps> = ({
     return acc;
   }, {} as Record<string, number>);
 
-  const newslettersByCategory = newsletters.reduce((acc, news) => {
-    const category = news.category || 'Other';
-    if (!acc[category]) {
-      acc[category] = 0;
-    }
-    acc[category] += 1;
-    return acc;
-  }, {} as Record<string, number>);
-
   const categoryBreakdowns = {
     subscriptions: Object.entries(subscriptionsByCategory).map(
       ([name, value], index) => ({
@@ -309,13 +281,6 @@ export const InsightsProvider: React.FC<InsightsProviderProps> = ({
       })
     ),
     expenses: Object.entries(expensesByCategory).map(
-      ([name, value], index) => ({
-        name,
-        value,
-        color: COLORS[index % COLORS.length],
-      })
-    ),
-    newsletters: Object.entries(newslettersByCategory).map(
       ([name, value], index) => ({
         name,
         value,
@@ -352,7 +317,6 @@ export const InsightsProvider: React.FC<InsightsProviderProps> = ({
     return {
       email: account.email,
       subscriptionCount: subscriptions.filter(s => s.userId === account.id).length,
-      newsletterCount: newsletters.filter(n => n.accountId === account.id).length,
       expenseCount: expenses.filter(e => e.accountId === account.id).length
     };
   });
@@ -403,10 +367,11 @@ export const InsightsProvider: React.FC<InsightsProviderProps> = ({
     // Simulate API call
     await new Promise((resolve) => setTimeout(resolve, 1000));
     
+    // Update account status
     setGmailAccounts(prev => 
       prev.map(acc => 
         acc.id === accountId 
-          ? { ...acc, connected: false, lastSynced: null } 
+          ? { ...acc, connected: false } 
           : acc
       )
     );
@@ -418,7 +383,6 @@ export const InsightsProvider: React.FC<InsightsProviderProps> = ({
     <InsightsContext.Provider
       value={{
         gmailAccounts,
-        newsletters,
         expenses,
         subscriptions,
         insightSummary,
@@ -428,7 +392,7 @@ export const InsightsProvider: React.FC<InsightsProviderProps> = ({
         isLoading,
         syncAccount,
         connectAccount,
-        disconnectAccount
+        disconnectAccount,
       }}
     >
       {children}

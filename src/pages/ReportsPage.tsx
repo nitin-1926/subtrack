@@ -43,7 +43,6 @@ import {
 const ReportsPage = () => {
   const { 
     subscriptions, 
-    newsletters, 
     expenses, 
     categoryBreakdowns, 
     timelineData,
@@ -102,30 +101,73 @@ const ReportsPage = () => {
           </div>
         </div>
 
-        <div className="mb-6">
-          <Tabs defaultValue="overview" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-4 md:w-auto md:inline-flex">
-              <TabsTrigger value="overview">Overview</TabsTrigger>
-              <TabsTrigger value="subscriptions">Subscriptions</TabsTrigger>
-              <TabsTrigger value="newsletters">Newsletters</TabsTrigger>
-              <TabsTrigger value="expenses">Expenses</TabsTrigger>
-            </TabsList>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex flex-col items-center justify-center text-center">
+                <div className="bg-primary/10 p-3 rounded-full mb-3">
+                  <CreditCard className="h-6 w-6 text-primary" />
+                </div>
+                <h3 className="text-2xl font-bold">{insightSummary.totalSubscriptions}</h3>
+                <p className="text-sm text-muted-foreground">Active Subscriptions</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex flex-col items-center justify-center text-center">
+                <div className="bg-primary/10 p-3 rounded-full mb-3">
+                  <Calendar className="h-6 w-6 text-primary" />
+                </div>
+                <h3 className="text-2xl font-bold">{formatCurrency(insightSummary.totalSubscriptionAmount)}</h3>
+                <p className="text-sm text-muted-foreground">Monthly Subscription Cost</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex flex-col items-center justify-center text-center">
+                <div className="bg-primary/10 p-3 rounded-full mb-3">
+                  <ShoppingBag className="h-6 w-6 text-primary" />
+                </div>
+                <h3 className="text-2xl font-bold">{insightSummary.totalExpenses}</h3>
+                <p className="text-sm text-muted-foreground">Tracked Expenses</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex flex-col items-center justify-center text-center">
+                <div className="bg-primary/10 p-3 rounded-full mb-3">
+                  <Mail className="h-6 w-6 text-primary" />
+                </div>
+                <h3 className="text-2xl font-bold">{insightSummary.connectedAccounts}</h3>
+                <p className="text-sm text-muted-foreground">Connected Accounts</p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
-            <TabsContent value="overview">
-              <div className="grid md:grid-cols-2 gap-6 mb-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Monthly Spending</CardTitle>
-                    <CardDescription>
-                      Subscription and expense costs over time
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="h-80">
+        <Tabs defaultValue="overview" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-2 md:w-auto md:inline-flex">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="detailed">Detailed Reports</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="overview">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+              <Card className="col-span-1">
+                <CardHeader>
+                  <CardTitle>Monthly Spending</CardTitle>
+                  <CardDescription>Expenses over time</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-80">
                     <ResponsiveContainer width="100%" height="100%">
                       <LineChart
                         data={monthlyData}
                         margin={{
-                          top: 20,
+                          top: 5,
                           right: 30,
                           left: 20,
                           bottom: 5,
@@ -133,33 +175,27 @@ const ReportsPage = () => {
                       >
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis dataKey="date" />
-                        <YAxis 
-                          tickFormatter={(value) => `$${value}`}
-                          domain={[0, 'dataMax + 20']}
-                        />
-                        <Tooltip 
-                          formatter={(value) => [`${formatCurrency(Number(value))}`, "Amount"]}
-                        />
+                        <YAxis />
+                        <Tooltip formatter={(value) => formatCurrency(value as number)} />
                         <Line
                           type="monotone"
                           dataKey="value"
-                          stroke="#8b5cf6"
-                          strokeWidth={2}
+                          stroke="#8B5CF6"
                           activeDot={{ r: 8 }}
                         />
                       </LineChart>
                     </ResponsiveContainer>
-                  </CardContent>
-                </Card>
+                  </div>
+                </CardContent>
+              </Card>
 
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Expense Categories</CardTitle>
-                    <CardDescription>
-                      Spending by category
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="h-80">
+              <Card className="col-span-1">
+                <CardHeader>
+                  <CardTitle>Spending by Category</CardTitle>
+                  <CardDescription>Breakdown of expenses</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-80">
                     <ResponsiveContainer width="100%" height="100%">
                       <PieChart>
                         <Pie
@@ -167,11 +203,10 @@ const ReportsPage = () => {
                           cx="50%"
                           cy="50%"
                           labelLine={false}
+                          label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
                           outerRadius={80}
                           fill="#8884d8"
                           dataKey="value"
-                          nameKey="name"
-                          label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
                         >
                           {categoryData.map((entry, index) => (
                             <Cell key={`cell-${index}`} fill={entry.color} />
@@ -181,355 +216,272 @@ const ReportsPage = () => {
                         <Legend />
                       </PieChart>
                     </ResponsiveContainer>
-                  </CardContent>
-                </Card>
-              </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Subscription Distribution</CardTitle>
+                  <CardDescription>By category</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-80">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={categoryBreakdowns.subscriptions}
+                          cx="50%"
+                          cy="50%"
+                          labelLine={false}
+                          label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                          outerRadius={80}
+                          fill="#8884d8"
+                          dataKey="value"
+                        >
+                          {categoryBreakdowns.subscriptions.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.color} />
+                          ))}
+                        </Pie>
+                        <Tooltip formatter={(value) => formatCurrency(value as number)} />
+                        <Legend />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                </CardContent>
+              </Card>
 
               <Card>
                 <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Calendar className="h-5 w-5 text-primary" />
-                      <CardTitle>Monthly Summary Report</CardTitle>
-                    </div>
-                    <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                      New
-                    </Badge>
+                  <CardTitle>Top Expenses</CardTitle>
+                  <CardDescription>Highest spending categories</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-80">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart
+                        data={categoryBreakdowns.expenses.slice(0, 5)}
+                        layout="vertical"
+                        margin={{
+                          top: 5,
+                          right: 30,
+                          left: 20,
+                          bottom: 5,
+                        }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis type="number" />
+                        <YAxis dataKey="name" type="category" width={100} />
+                        <Tooltip formatter={(value) => formatCurrency(value as number)} />
+                        <Bar dataKey="value" fill="#8B5CF6" />
+                      </BarChart>
+                    </ResponsiveContainer>
                   </div>
-                  <CardDescription>
-                    Comprehensive insights across all your data
-                  </CardDescription>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="detailed">
+            <div className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div>
+                      <CardTitle>Subscription Report</CardTitle>
+                      <CardDescription>
+                        Detailed breakdown of your subscriptions
+                      </CardDescription>
+                    </div>
+                    <div className="flex gap-2">
+                      <Select defaultValue="all">
+                        <SelectTrigger className="w-[180px]">
+                          <SelectValue placeholder="Filter by category" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Categories</SelectItem>
+                          <SelectItem value="entertainment">Entertainment</SelectItem>
+                          <SelectItem value="software">Software</SelectItem>
+                          <SelectItem value="music">Music</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <Button variant="outline" size="icon">
+                        <Download className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    <div className="rounded-md border p-4">
-                      <div className="flex justify-between items-center">
-                        <div>
-                          <h3 className="font-medium">April 2025 Summary</h3>
-                          <p className="text-sm text-muted-foreground">Generated on {format(new Date(), 'MMMM d, yyyy')}</p>
+                    {subscriptions.map((subscription) => (
+                      <div key={subscription.id} className="flex items-center justify-between p-3 rounded-lg border">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                            <CreditCard className="h-5 w-5 text-primary" />
+                          </div>
+                          <div>
+                            <h4 className="font-medium">{subscription.serviceName}</h4>
+                            <p className="text-sm text-muted-foreground">
+                              {subscription.category} • Renews {format(new Date(subscription.billingDate), "MMM d, yyyy")}
+                            </p>
+                          </div>
                         </div>
-                        <Button variant="outline" size="sm" className="flex gap-2">
-                          <Download className="h-4 w-4" />
-                          Download
-                        </Button>
+                        <div className="text-right">
+                          <p className="font-semibold">{formatCurrency(subscription.amount)}</p>
+                          <p className="text-sm text-muted-foreground">Monthly</p>
+                        </div>
                       </div>
-                      <div className="mt-4 grid grid-cols-3 gap-4">
-                        <div className="flex flex-col p-3 bg-muted/30 rounded-lg">
-                          <span className="text-sm text-muted-foreground">Subscriptions</span>
-                          <span className="text-lg font-semibold">{formatCurrency(insightSummary.totalSubscriptionAmount)}</span>
+                    ))}
+                  </div>
+                </CardContent>
+                <CardFooter className="flex justify-between">
+                  <div>
+                    <p className="text-sm text-muted-foreground">
+                      Showing {subscriptions.length} subscriptions
+                    </p>
+                  </div>
+                  <div className="font-semibold">
+                    Total: {formatCurrency(insightSummary.totalSubscriptionAmount)}
+                  </div>
+                </CardFooter>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div>
+                      <CardTitle>Expense Report</CardTitle>
+                      <CardDescription>
+                        Detailed breakdown of your expenses
+                      </CardDescription>
+                    </div>
+                    <div className="flex gap-2">
+                      <Select defaultValue="all">
+                        <SelectTrigger className="w-[180px]">
+                          <SelectValue placeholder="Filter by category" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Categories</SelectItem>
+                          <SelectItem value="shopping">Shopping</SelectItem>
+                          <SelectItem value="food">Food & Drink</SelectItem>
+                          <SelectItem value="travel">Travel</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <Button variant="outline" size="icon">
+                        <Download className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {expenses.slice(0, 5).map((expense) => (
+                      <div key={expense.id} className="flex items-center justify-between p-3 rounded-lg border">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                            <ShoppingBag className="h-5 w-5 text-primary" />
+                          </div>
+                          <div>
+                            <h4 className="font-medium">{expense.merchant}</h4>
+                            <p className="text-sm text-muted-foreground">
+                              {expense.category} • {format(new Date(expense.date), "MMM d, yyyy")}
+                            </p>
+                          </div>
                         </div>
-                        <div className="flex flex-col p-3 bg-muted/30 rounded-lg">
-                          <span className="text-sm text-muted-foreground">Expenses</span>
-                          <span className="text-lg font-semibold">{formatCurrency(insightSummary.monthlyExpenseAmount)}</span>
+                        <div className="text-right">
+                          <p className="font-semibold">{formatCurrency(expense.amount)}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {expense.description ? expense.description.substring(0, 20) : "No description"}
+                          </p>
                         </div>
-                        <div className="flex flex-col p-3 bg-muted/30 rounded-lg">
-                          <span className="text-sm text-muted-foreground">Newsletters</span>
-                          <span className="text-lg font-semibold">{insightSummary.totalNewsletters}</span>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+                <CardFooter className="flex justify-between">
+                  <div>
+                    <p className="text-sm text-muted-foreground">
+                      Showing 5 of {expenses.length} expenses
+                    </p>
+                  </div>
+                  <div className="font-semibold">
+                    Total: {formatCurrency(insightSummary.monthlyExpenseAmount)}
+                  </div>
+                </CardFooter>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Summary Statistics</CardTitle>
+                  <CardDescription>
+                    Key metrics for your financial tracking
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <h3 className="text-lg font-medium">Subscriptions</h3>
+                      <div className="space-y-1">
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Total Count</span>
+                          <span>{insightSummary.totalSubscriptions}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Monthly Cost</span>
+                          <span>{formatCurrency(insightSummary.totalSubscriptionAmount)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Annual Cost</span>
+                          <span>{formatCurrency(insightSummary.totalSubscriptionAmount * 12)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Average Cost</span>
+                          <span>
+                            {insightSummary.totalSubscriptions > 0
+                              ? formatCurrency(
+                                  insightSummary.totalSubscriptionAmount / insightSummary.totalSubscriptions
+                                )
+                              : formatCurrency(0)}
+                          </span>
                         </div>
                       </div>
                     </div>
-                    <div className="rounded-md border p-4">
-                      <div className="flex justify-between items-center">
-                        <div>
-                          <h3 className="font-medium">March 2025 Summary</h3>
-                          <p className="text-sm text-muted-foreground">Generated on March 31, 2025</p>
+                    
+                    <div className="space-y-2">
+                      <h3 className="text-lg font-medium">Expenses</h3>
+                      <div className="space-y-1">
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Total Count</span>
+                          <span>{insightSummary.totalExpenses}</span>
                         </div>
-                        <Button variant="outline" size="sm" className="flex gap-2">
-                          <Download className="h-4 w-4" />
-                          Download
-                        </Button>
-                      </div>
-                    </div>
-                    <div className="rounded-md border p-4">
-                      <div className="flex justify-between items-center">
-                        <div>
-                          <h3 className="font-medium">February 2025 Summary</h3>
-                          <p className="text-sm text-muted-foreground">Generated on February 28, 2025</p>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Total Amount</span>
+                          <span>{formatCurrency(insightSummary.monthlyExpenseAmount)}</span>
                         </div>
-                        <Button variant="outline" size="sm" className="flex gap-2">
-                          <Download className="h-4 w-4" />
-                          Download
-                        </Button>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Average Amount</span>
+                          <span>
+                            {insightSummary.totalExpenses > 0
+                              ? formatCurrency(
+                                  insightSummary.monthlyExpenseAmount / insightSummary.totalExpenses
+                                )
+                              : formatCurrency(0)}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Categories</span>
+                          <span>{categoryBreakdowns.expenses.length}</span>
+                        </div>
                       </div>
                     </div>
                   </div>
                 </CardContent>
               </Card>
-            </TabsContent>
-
-            <TabsContent value="subscriptions">
-              <div className="grid gap-6">
-                <Card>
-                  <CardHeader>
-                    <div className="flex items-center gap-2">
-                      <CreditCard className="h-5 w-5 text-primary" />
-                      <CardTitle>Subscription Analytics</CardTitle>
-                    </div>
-                    <CardDescription>
-                      Track and analyze your recurring payments
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid md:grid-cols-2 gap-6">
-                      <div>
-                        <h3 className="text-lg font-medium mb-4">Subscription Breakdown</h3>
-                        <ResponsiveContainer width="100%" height={300}>
-                          <PieChart>
-                            <Pie
-                              data={categoryBreakdowns.subscriptions}
-                              cx="50%"
-                              cy="50%"
-                              labelLine={false}
-                              outerRadius={80}
-                              fill="#8884d8"
-                              dataKey="value"
-                              nameKey="name"
-                              label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                            >
-                              {categoryBreakdowns.subscriptions.map((entry, index) => (
-                                <Cell key={`cell-${index}`} fill={entry.color} />
-                              ))}
-                            </Pie>
-                            <Tooltip formatter={(value) => formatCurrency(value as number)} />
-                            <Legend />
-                          </PieChart>
-                        </ResponsiveContainer>
-                      </div>
-                      <div className="space-y-4">
-                        <div className="p-4 rounded-lg bg-muted/30">
-                          <div className="flex justify-between items-center mb-2">
-                            <h4 className="font-medium">Total Monthly Cost</h4>
-                            <span className="text-xl font-bold">{formatCurrency(insightSummary.totalSubscriptionAmount)}</span>
-                          </div>
-                          <div className="text-sm text-muted-foreground">
-                            Based on {insightSummary.totalSubscriptions} active subscriptions
-                          </div>
-                        </div>
-                        
-                        <div className="p-4 rounded-lg bg-muted/30">
-                          <h4 className="font-medium mb-2">Top Subscriptions</h4>
-                          <div className="space-y-2">
-                            {subscriptions.slice(0, 3).map(sub => (
-                              <div key={sub.id} className="flex justify-between items-center">
-                                <span>{sub.serviceName}</span>
-                                <span className="font-medium">{formatCurrency(sub.amount)}</span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                        
-                        <div className="p-4 rounded-lg bg-muted/30">
-                          <h4 className="font-medium mb-2">Potential Savings</h4>
-                          <div className="text-lg font-semibold text-green-600">
-                            {formatCurrency(insightSummary.totalSubscriptionAmount * 0.15)}
-                          </div>
-                          <div className="text-sm text-muted-foreground">
-                            By canceling unused subscriptions
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                  <CardFooter className="flex justify-end">
-                    <Button variant="outline" className="flex gap-2">
-                      <Download className="h-4 w-4" />
-                      Download Subscription Report
-                    </Button>
-                  </CardFooter>
-                </Card>
-              </div>
-            </TabsContent>
-
-            <TabsContent value="newsletters">
-              <div className="grid gap-6">
-                <Card>
-                  <CardHeader>
-                    <div className="flex items-center gap-2">
-                      <Mail className="h-5 w-5 text-primary" />
-                      <CardTitle>Newsletter Analytics</CardTitle>
-                    </div>
-                    <CardDescription>
-                      Track and analyze your newsletter subscriptions
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid md:grid-cols-2 gap-6">
-                      <div>
-                        <h3 className="text-lg font-medium mb-4">Newsletter Categories</h3>
-                        <ResponsiveContainer width="100%" height={300}>
-                          <PieChart>
-                            <Pie
-                              data={categoryBreakdowns.newsletters}
-                              cx="50%"
-                              cy="50%"
-                              labelLine={false}
-                              outerRadius={80}
-                              fill="#8884d8"
-                              dataKey="value"
-                              nameKey="name"
-                              label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                            >
-                              {categoryBreakdowns.newsletters.map((entry, index) => (
-                                <Cell key={`cell-${index}`} fill={entry.color} />
-                              ))}
-                            </Pie>
-                            <Tooltip formatter={(value) => `${value} newsletters`} />
-                            <Legend />
-                          </PieChart>
-                        </ResponsiveContainer>
-                      </div>
-                      <div className="space-y-4">
-                        <div className="p-4 rounded-lg bg-muted/30">
-                          <div className="flex justify-between items-center mb-2">
-                            <h4 className="font-medium">Total Newsletters</h4>
-                            <span className="text-xl font-bold">{insightSummary.totalNewsletters}</span>
-                          </div>
-                          <div className="text-sm text-muted-foreground">
-                            {insightSummary.unreadNewsletters} unread newsletters
-                          </div>
-                        </div>
-                        
-                        <div className="p-4 rounded-lg bg-muted/30">
-                          <h4 className="font-medium mb-2">Top Newsletter Senders</h4>
-                          <div className="space-y-2">
-                            {newsletters.slice(0, 3).map(newsletter => (
-                              <div key={newsletter.id} className="flex justify-between items-center">
-                                <span>{newsletter.sender}</span>
-                                <Badge variant={newsletter.read ? "outline" : "default"}>
-                                  {newsletter.read ? "Read" : "Unread"}
-                                </Badge>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                        
-                        <div className="p-4 rounded-lg bg-muted/30">
-                          <h4 className="font-medium mb-2">Reading Stats</h4>
-                          <div className="flex items-center gap-2">
-                            <div className="h-2 flex-1 bg-muted rounded-full overflow-hidden">
-                              <div 
-                                className="h-full bg-primary" 
-                                style={{ 
-                                  width: `${(insightSummary.totalNewsletters - insightSummary.unreadNewsletters) / insightSummary.totalNewsletters * 100}%` 
-                                }}
-                              />
-                            </div>
-                            <span className="text-sm font-medium">
-                              {Math.round((insightSummary.totalNewsletters - insightSummary.unreadNewsletters) / insightSummary.totalNewsletters * 100)}% read
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                  <CardFooter className="flex justify-end">
-                    <Button variant="outline" className="flex gap-2">
-                      <Download className="h-4 w-4" />
-                      Download Newsletter Report
-                    </Button>
-                  </CardFooter>
-                </Card>
-              </div>
-            </TabsContent>
-
-            <TabsContent value="expenses">
-              <div className="grid gap-6">
-                <Card>
-                  <CardHeader>
-                    <div className="flex items-center gap-2">
-                      <ShoppingBag className="h-5 w-5 text-primary" />
-                      <CardTitle>Expense Analytics</CardTitle>
-                    </div>
-                    <CardDescription>
-                      Track and analyze your spending patterns
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid md:grid-cols-2 gap-6">
-                      <div>
-                        <h3 className="text-lg font-medium mb-4">Monthly Expense Trend</h3>
-                        <ResponsiveContainer width="100%" height={300}>
-                          <LineChart
-                            data={timelineData.expenses}
-                            margin={{
-                              top: 20,
-                              right: 30,
-                              left: 20,
-                              bottom: 5,
-                            }}
-                          >
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis dataKey="date" />
-                            <YAxis 
-                              tickFormatter={(value) => `$${value}`}
-                              domain={[0, 'dataMax + 20']}
-                            />
-                            <Tooltip 
-                              formatter={(value) => [`${formatCurrency(Number(value))}`, "Amount"]}
-                            />
-                            <Line
-                              type="monotone"
-                              dataKey="value"
-                              stroke="#8b5cf6"
-                              strokeWidth={2}
-                              activeDot={{ r: 8 }}
-                            />
-                          </LineChart>
-                        </ResponsiveContainer>
-                      </div>
-                      <div className="space-y-4">
-                        <div className="p-4 rounded-lg bg-muted/30">
-                          <div className="flex justify-between items-center mb-2">
-                            <h4 className="font-medium">Total Monthly Expenses</h4>
-                            <span className="text-xl font-bold">{formatCurrency(insightSummary.monthlyExpenseAmount)}</span>
-                          </div>
-                          <div className="text-sm text-muted-foreground">
-                            Based on {insightSummary.totalExpenses} transactions
-                          </div>
-                        </div>
-                        
-                        <div className="p-4 rounded-lg bg-muted/30">
-                          <h4 className="font-medium mb-2">Top Expense Categories</h4>
-                          <div className="space-y-2">
-                            {categoryBreakdowns.expenses.slice(0, 3).map((category, index) => (
-                              <div key={index} className="flex justify-between items-center">
-                                <span>{category.name}</span>
-                                <span className="font-medium">{formatCurrency(category.value)}</span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                        
-                        <div className="p-4 rounded-lg bg-muted/30">
-                          <h4 className="font-medium mb-2">Recent Transactions</h4>
-                          <div className="space-y-2">
-                            {expenses.slice(0, 3).map(expense => (
-                              <div key={expense.id} className="flex justify-between items-center">
-                                <div className="flex items-center gap-2">
-                                  <Badge variant="outline" className="bg-muted">
-                                    {expense.category}
-                                  </Badge>
-                                  <span>{expense.merchant}</span>
-                                </div>
-                                <span className="font-medium">{formatCurrency(expense.amount)}</span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                  <CardFooter className="flex justify-end">
-                    <Button variant="outline" className="flex gap-2">
-                      <Download className="h-4 w-4" />
-                      Download Expense Report
-                    </Button>
-                  </CardFooter>
-                </Card>
-              </div>
-            </TabsContent>
-          </Tabs>
-        </div>
+            </div>
+          </TabsContent>
+        </Tabs>
       </div>
     </AppLayout>
   );

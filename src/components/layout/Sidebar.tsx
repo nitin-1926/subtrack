@@ -1,20 +1,13 @@
-
 import React from "react";
 import { NavLink } from "react-router-dom";
-import {
-  Calendar,
-  CreditCard,
-  Home,
-  Mail,
-  Plus,
-  Settings,
-} from "lucide-react";
+import { Calendar, CreditCard, Home, Mail, Settings, ShoppingBag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export const Sidebar = () => {
   const navigation = [
     { name: "Dashboard", to: "/", icon: Home },
     { name: "Subscriptions", to: "/subscriptions", icon: CreditCard },
+    { name: "Expenses", to: "/expenses", icon: ShoppingBag },
     { name: "Email Sync", to: "/email-sync", icon: Mail },
     { name: "Reports", to: "/reports", icon: Calendar },
     { name: "Settings", to: "/settings", icon: Settings },
@@ -46,12 +39,6 @@ export const Sidebar = () => {
             </NavLink>
           ))}
         </nav>
-        <div className="pt-4">
-          <Button className="w-full flex items-center justify-center gap-2">
-            <Plus className="h-4 w-4" />
-            Add Subscription
-          </Button>
-        </div>
       </div>
     </div>
   );

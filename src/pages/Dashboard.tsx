@@ -3,17 +3,16 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { SubscriptionList } from "@/components/subscriptions/SubscriptionList";
 import { SubscriptionChart } from "@/components/dashboard/SubscriptionChart";
-import { AddSubscriptionForm } from "@/components/subscriptions/AddSubscriptionForm";
 import { 
   CreditCard, 
   Calendar, 
   TrendingUp, 
   Mail, 
   Inbox, 
-  FileText, 
   ArrowRight,
   RefreshCw,
-  Download
+  Download,
+  ShoppingBag
 } from "lucide-react";
 import { useSubscriptions } from "@/hooks/useSubscriptions";
 import { useInsights } from "@/hooks/useInsights";
@@ -33,7 +32,6 @@ import { Link } from "react-router-dom";
 const Dashboard = () => {
   const { 
     subscriptions, 
-    newsletters, 
     expenses,
     gmailAccounts,
     insightSummary,
@@ -60,9 +58,6 @@ const Dashboard = () => {
   const recentExpenses = [...expenses]
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
     .slice(0, 3);
-
-  // Get unread newsletters
-  const unreadNewsletters = newsletters.filter(n => !n.read).slice(0, 3);
 
   return (
     <AppLayout>
@@ -116,50 +111,11 @@ const Dashboard = () => {
                 </DialogFooter>
               </DialogContent>
             </Dialog>
-            <AddSubscriptionForm />
           </div>
         </div>
 
-        {/* Connected Accounts Summary */}
-        {gmailAccounts.length > 0 && (
-          <div className="mb-6">
-            <h2 className="text-lg font-semibold mb-3">Connected Accounts</h2>
-            <div className="flex flex-wrap gap-2">
-              {gmailAccounts.map((account) => (
-                <div 
-                  key={account.id}
-                  className={`flex items-center gap-2 p-2 rounded-lg border ${
-                    account.connected 
-                      ? "bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-900/30" 
-                      : "bg-red-50 border-red-200 dark:bg-red-900/20 dark:border-red-900/30"
-                  }`}
-                >
-                  <Avatar className="h-6 w-6">
-                    <AvatarImage src={account.avatarUrl} />
-                    <AvatarFallback>{account.email[0]}</AvatarFallback>
-                  </Avatar>
-                  <span className="text-sm font-medium">{account.email}</span>
-                  {account.connected ? (
-                    <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 text-xs">
-                      Connected
-                    </Badge>
-                  ) : (
-                    <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200 text-xs">
-                      Disconnected
-                    </Badge>
-                  )}
-                </div>
-              ))}
-              <Button variant="outline" size="sm" className="h-10" onClick={() => setIsDialogOpen(true)}>
-                <Mail className="h-4 w-4 mr-1" />
-                Add Account
-              </Button>
-            </div>
-          </div>
-        )}
-
         {/* Insight Stats */}
-        <div className="grid gap-6 md:grid-cols-3 mb-6">
+        <div className="grid gap-6 md:grid-cols-2 mb-6">
           <StatCard
             title="Monthly Subscriptions"
             value={formatCurrency(insightSummary.totalSubscriptionAmount)}
@@ -171,12 +127,6 @@ const Dashboard = () => {
             value={formatCurrency(insightSummary.monthlyExpenseAmount)}
             description={`${insightSummary.totalExpenses} transactions tracked`}
             icon={<TrendingUp className="h-4 w-4" />}
-          />
-          <StatCard
-            title="Newsletters"
-            value={insightSummary.unreadNewsletters.toString()}
-            description="Unread newsletters"
-            icon={<FileText className="h-4 w-4" />}
           />
         </div>
 
@@ -212,214 +162,281 @@ const Dashboard = () => {
                             <div>
                               <p className="font-medium">{expense.merchant}</p>
                               <p className="text-xs text-muted-foreground">
-                                {format(new Date(expense.date), 'MMM d, yyyy')}
+                                {format(new Date(expense.date), "MMM d, yyyy")}
                               </p>
                             </div>
                           </div>
-                          <p className="font-semibold">{formatCurrency(expense.amount)}</p>
+                          <span className="font-semibold">
+                            {formatCurrency(expense.amount)}
+                          </span>
                         </div>
                       ))}
                     </div>
                   )}
                 </CardContent>
-                <CardFooter>
-                  <Link to="/expenses" className="w-full">
-                    <Button variant="ghost" size="sm" className="w-full">
+                <CardFooter className="pt-0">
+                  <Button variant="ghost" size="sm" className="w-full" asChild>
+                    <Link to="/expenses">
                       View All Expenses
-                      <ArrowRight className="ml-1 h-4 w-4" />
-                    </Button>
-                  </Link>
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </Link>
+                  </Button>
                 </CardFooter>
               </Card>
 
-              {/* Unread Newsletters */}
+              {/* Upcoming Subscriptions */}
               <Card className="md:col-span-2 lg:col-span-1">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-lg">Unread Newsletters</CardTitle>
-                  <CardDescription>Your latest newsletters</CardDescription>
+                  <CardTitle className="text-lg">Upcoming Subscriptions</CardTitle>
+                  <CardDescription>Due in the next 7 days</CardDescription>
                 </CardHeader>
                 <CardContent className="pb-2">
-                  {unreadNewsletters.length === 0 ? (
+                  {subscriptions.length === 0 ? (
                     <div className="text-center py-4 text-muted-foreground">
-                      No unread newsletters
+                      No upcoming subscriptions
                     </div>
                   ) : (
                     <div className="space-y-4">
-                      {unreadNewsletters.map((newsletter) => (
-                        <div key={newsletter.id} className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <Avatar className="h-9 w-9">
-                              <AvatarImage src={newsletter.logoUrl} />
-                              <AvatarFallback>{newsletter.sender[0]}</AvatarFallback>
-                            </Avatar>
-                            <div>
-                              <p className="font-medium">{newsletter.sender}</p>
-                              <p className="text-xs text-muted-foreground line-clamp-1">
-                                {newsletter.subject}
-                              </p>
+                      {subscriptions
+                        .filter(sub => {
+                          const today = new Date();
+                          const billingDate = new Date(sub.billingDate);
+                          const diffTime = billingDate.getTime() - today.getTime();
+                          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                          return diffDays >= 0 && diffDays <= 7;
+                        })
+                        .slice(0, 3)
+                        .map((subscription) => (
+                          <div key={subscription.id} className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <Avatar className="h-9 w-9">
+                                <AvatarImage src={subscription.logoUrl} />
+                                <AvatarFallback>{subscription.serviceName[0]}</AvatarFallback>
+                              </Avatar>
+                              <div>
+                                <p className="font-medium">{subscription.serviceName}</p>
+                                <p className="text-xs text-muted-foreground">
+                                  Due {format(new Date(subscription.billingDate), "MMM d, yyyy")}
+                                </p>
+                              </div>
                             </div>
+                            <span className="font-semibold">
+                              {formatCurrency(subscription.amount)}
+                            </span>
                           </div>
-                          <Badge variant="outline" className="bg-primary/10 text-primary">
-                            New
-                          </Badge>
-                        </div>
-                      ))}
+                        ))}
                     </div>
                   )}
                 </CardContent>
-                <CardFooter>
-                  <Link to="/newsletters" className="w-full">
-                    <Button variant="ghost" size="sm" className="w-full">
-                      View All Newsletters
-                      <ArrowRight className="ml-1 h-4 w-4" />
-                    </Button>
-                  </Link>
+                <CardFooter className="pt-0">
+                  <Button variant="ghost" size="sm" className="w-full" asChild>
+                    <Link to="/subscriptions">
+                      View All Subscriptions
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </Link>
+                  </Button>
                 </CardFooter>
               </Card>
 
-              {/* Spending Trends */}
-              <Card className="lg:col-span-1 md:col-span-2">
+              {/* Spending by Category */}
+              <Card className="md:col-span-2 lg:col-span-1">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-lg">Spending Trends</CardTitle>
-                  <CardDescription>6-month expense history</CardDescription>
+                  <CardTitle className="text-lg">Spending by Category</CardTitle>
+                  <CardDescription>Top spending categories</CardDescription>
                 </CardHeader>
-                <CardContent>
-                  <div className="h-[200px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <LineChart
-                        data={timelineData.expenses}
-                        margin={{ top: 5, right: 20, left: 0, bottom: 5 }}
-                      >
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="date" />
-                        <YAxis tickFormatter={(value) => `$${value}`} />
-                        <RechartsTooltip formatter={(value) => [`$${value}`, 'Amount']} />
-                        <Line
-                          type="monotone"
-                          dataKey="value"
-                          stroke="#8B5CF6"
-                          strokeWidth={2}
-                          dot={{ r: 4 }}
-                          activeDot={{ r: 6 }}
-                        />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </div>
+                <CardContent className="pb-2">
+                  {categoryBreakdowns.expenses.length === 0 ? (
+                    <div className="text-center py-4 text-muted-foreground">
+                      No category data available
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {categoryBreakdowns.expenses
+                        .sort((a, b) => b.value - a.value)
+                        .slice(0, 3)
+                        .map((category) => (
+                          <div key={category.name} className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <div 
+                                className="h-9 w-9 rounded-full flex items-center justify-center"
+                                style={{ backgroundColor: `${category.color}20` }}
+                              >
+                                <ShoppingBag 
+                                  className="h-5 w-5" 
+                                  style={{ color: category.color }} 
+                                />
+                              </div>
+                              <div>
+                                <p className="font-medium">{category.name}</p>
+                                <p className="text-xs text-muted-foreground">
+                                  {Math.round((category.value / insightSummary.monthlyExpenseAmount) * 100)}% of total
+                                </p>
+                              </div>
+                            </div>
+                            <span className="font-semibold">
+                              {formatCurrency(category.value)}
+                            </span>
+                          </div>
+                        ))}
+                    </div>
+                  )}
                 </CardContent>
-                <CardFooter>
-                  <Link to="/reports" className="w-full">
-                    <Button variant="ghost" size="sm" className="w-full">
-                      View Detailed Reports
-                      <ArrowRight className="ml-1 h-4 w-4" />
-                    </Button>
-                  </Link>
+                <CardFooter className="pt-0">
+                  <Button variant="ghost" size="sm" className="w-full" asChild>
+                    <Link to="/expenses">
+                      View All Categories
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </Link>
+                  </Button>
                 </CardFooter>
               </Card>
             </div>
+
+            {/* Spending Timeline */}
+            <Card className="mt-6">
+              <CardHeader>
+                <CardTitle className="text-lg">Spending Timeline</CardTitle>
+                <CardDescription>Your spending over time</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="h-[300px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart
+                      data={timelineData.expenses}
+                      margin={{
+                        top: 5,
+                        right: 30,
+                        left: 20,
+                        bottom: 5,
+                      }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="date" />
+                      <YAxis tickFormatter={(value) => `$${value}`} />
+                      <RechartsTooltip formatter={(value) => [`$${value}`, "Amount"]} />
+                      <Line
+                        type="monotone"
+                        dataKey="value"
+                        stroke="#8B5CF6"
+                        activeDot={{ r: 8 }}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="subscriptions">
-            <div className="grid lg:grid-cols-3 gap-6 mb-6">
-              <div className="lg:col-span-2">
-                <h2 className="text-xl font-semibold mb-4">Your Subscriptions</h2>
-                <SubscriptionList subscriptions={subscriptions} isLoading={isLoading} />
-              </div>
-              <div>
+            <Card>
+              <CardHeader>
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div>
+                    <CardTitle className="text-lg">Your Subscriptions</CardTitle>
+                    <CardDescription>
+                      Manage and track all your subscriptions
+                    </CardDescription>
+                  </div>
+                  <Button variant="outline" size="sm" asChild>
+                    <Link to="/subscriptions">
+                      View All
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </Link>
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <SubscriptionList 
+                  subscriptions={subscriptions.slice(0, 5)} 
+                  isLoading={isLoading} 
+                  compact 
+                />
+              </CardContent>
+            </Card>
+
+            <Card className="mt-6">
+              <CardHeader>
+                <CardTitle className="text-lg">Subscription Breakdown</CardTitle>
+                <CardDescription>
+                  Your subscriptions by category
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
                 <SubscriptionChart data={categoryBreakdowns.subscriptions} />
-              </div>
-            </div>
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="insights">
             <div className="grid gap-6 md:grid-cols-2">
               <Card>
                 <CardHeader>
-                  <CardTitle>Email Insights</CardTitle>
-                  <CardDescription>Summary of your email data</CardDescription>
+                  <CardTitle className="text-lg">Subscription Insights</CardTitle>
+                  <CardDescription>
+                    Overview of your subscription spending
+                  </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex justify-between items-center p-2 rounded-lg bg-muted/50">
-                    <div className="flex items-center gap-2">
-                      <Inbox className="h-4 w-4 text-primary" />
-                      <span>Connected Accounts</span>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center p-3 bg-muted/40 rounded-lg">
+                      <span>Total Monthly Cost</span>
+                      <span className="font-semibold">{formatCurrency(insightSummary.totalSubscriptionAmount)}</span>
                     </div>
-                    <span className="font-semibold">{insightSummary.connectedAccounts}</span>
-                  </div>
-                  <div className="flex justify-between items-center p-2 rounded-lg bg-muted/50">
-                    <div className="flex items-center gap-2">
-                      <FileText className="h-4 w-4 text-primary" />
-                      <span>Total Newsletters</span>
+                    <div className="flex justify-between items-center p-3 bg-muted/40 rounded-lg">
+                      <span>Active Subscriptions</span>
+                      <span className="font-semibold">{insightSummary.totalSubscriptions}</span>
                     </div>
-                    <span className="font-semibold">{insightSummary.totalNewsletters}</span>
-                  </div>
-                  <div className="flex justify-between items-center p-2 rounded-lg bg-muted/50">
-                    <div className="flex items-center gap-2">
-                      <CreditCard className="h-4 w-4 text-primary" />
-                      <span>Total Expenses</span>
+                    <div className="flex justify-between items-center p-3 bg-muted/40 rounded-lg">
+                      <span>Average Cost per Subscription</span>
+                      <span className="font-semibold">
+                        {insightSummary.totalSubscriptions > 0
+                          ? formatCurrency(insightSummary.totalSubscriptionAmount / insightSummary.totalSubscriptions)
+                          : "$0.00"}
+                      </span>
                     </div>
-                    <span className="font-semibold">{insightSummary.totalExpenses}</span>
+                    <div className="flex justify-between items-center p-3 bg-muted/40 rounded-lg">
+                      <span>Annual Subscription Cost</span>
+                      <span className="font-semibold">{formatCurrency(insightSummary.totalSubscriptionAmount * 12)}</span>
+                    </div>
                   </div>
                 </CardContent>
-                <CardFooter>
-                  <Link to="/accounts" className="w-full">
-                    <Button variant="outline" className="w-full">
-                      <RefreshCw className="mr-2 h-4 w-4" />
-                      Sync Email Accounts
-                    </Button>
-                  </Link>
-                </CardFooter>
               </Card>
 
               <Card>
                 <CardHeader>
-                  <CardTitle>Generate Reports</CardTitle>
-                  <CardDescription>Download insights as reports</CardDescription>
+                  <CardTitle className="text-lg">Expense Insights</CardTitle>
+                  <CardDescription>
+                    Overview of your general spending
+                  </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="p-4 rounded-lg border border-dashed flex items-center justify-between">
-                    <div>
-                      <h3 className="font-medium">Monthly Summary</h3>
-                      <p className="text-sm text-muted-foreground">
-                        Complete overview of your monthly activity
-                      </p>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center p-3 bg-muted/40 rounded-lg">
+                      <span>Total Monthly Expenses</span>
+                      <span className="font-semibold">{formatCurrency(insightSummary.monthlyExpenseAmount)}</span>
                     </div>
-                    <Button variant="outline" size="sm">
-                      <Download className="h-4 w-4 mr-1" />
-                      PDF
-                    </Button>
-                  </div>
-                  <div className="p-4 rounded-lg border border-dashed flex items-center justify-between">
-                    <div>
-                      <h3 className="font-medium">Subscription Report</h3>
-                      <p className="text-sm text-muted-foreground">
-                        Detailed breakdown of all subscriptions
-                      </p>
+                    <div className="flex justify-between items-center p-3 bg-muted/40 rounded-lg">
+                      <span>Tracked Transactions</span>
+                      <span className="font-semibold">{insightSummary.totalExpenses}</span>
                     </div>
-                    <Button variant="outline" size="sm">
-                      <Download className="h-4 w-4 mr-1" />
-                      PDF
-                    </Button>
-                  </div>
-                  <div className="p-4 rounded-lg border border-dashed flex items-center justify-between">
-                    <div>
-                      <h3 className="font-medium">Expense Analysis</h3>
-                      <p className="text-sm text-muted-foreground">
-                        Spending patterns and category breakdown
-                      </p>
+                    <div className="flex justify-between items-center p-3 bg-muted/40 rounded-lg">
+                      <span>Average Transaction Amount</span>
+                      <span className="font-semibold">
+                        {insightSummary.totalExpenses > 0
+                          ? formatCurrency(insightSummary.monthlyExpenseAmount / insightSummary.totalExpenses)
+                          : "$0.00"}
+                      </span>
                     </div>
-                    <Button variant="outline" size="sm">
-                      <Download className="h-4 w-4 mr-1" />
-                      PDF
-                    </Button>
+                    <div className="flex justify-between items-center p-3 bg-muted/40 rounded-lg">
+                      <span>Subscription to Expense Ratio</span>
+                      <span className="font-semibold">
+                        {insightSummary.monthlyExpenseAmount > 0
+                          ? `${Math.round((insightSummary.totalSubscriptionAmount / insightSummary.monthlyExpenseAmount) * 100)}%`
+                          : "0%"}
+                      </span>
+                    </div>
                   </div>
                 </CardContent>
-                <CardFooter>
-                  <Link to="/reports" className="w-full">
-                    <Button className="w-full">
-                      View All Reports
-                    </Button>
-                  </Link>
-                </CardFooter>
               </Card>
             </div>
           </TabsContent>

@@ -7,19 +7,6 @@ export interface GmailAccount {
   avatarUrl?: string;
 }
 
-export interface Newsletter {
-  id: string;
-  sender: string;
-  subject: string;
-  receivedAt: string;
-  category: string;
-  read: boolean;
-  starred: boolean;
-  snippet: string;
-  logoUrl?: string;
-  accountId: string;
-}
-
 export interface Expense {
   id: string;
   merchant: string;
@@ -34,8 +21,6 @@ export interface Expense {
 export interface InsightSummary {
   totalSubscriptions: number;
   totalSubscriptionAmount: number;
-  totalNewsletters: number;
-  unreadNewsletters: number;
   totalExpenses: number;
   monthlyExpenseAmount: number;
   connectedAccounts: number;
@@ -55,6 +40,5 @@ export interface TimelineData {
 export interface AccountInsights {
   email: string;
   subscriptionCount: number;
-  newsletterCount: number;
   expenseCount: number;
 }

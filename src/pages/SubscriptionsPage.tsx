@@ -1,8 +1,6 @@
-
 import React, { useState } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { SubscriptionList } from "@/components/subscriptions/SubscriptionList";
-import { AddSubscriptionForm } from "@/components/subscriptions/AddSubscriptionForm";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -80,7 +78,6 @@ const SubscriptionsPage = () => {
                 <SelectItem value="date-desc">Date: Latest</SelectItem>
               </SelectContent>
             </Select>
-            <AddSubscriptionForm />
           </div>
         </div>
 
