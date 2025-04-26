@@ -169,15 +169,15 @@ export const MOCK_SUBSCRIPTIONS: Subscription[] = [
 
 // Chart colors
 export const COLORS = [
-  "#8B5CF6", // Brand purple
-  "#3B82F6", // Blue
-  "#10B981", // Green
-  "#F59E0B", // Yellow
-  "#EF4444", // Red
-  "#EC4899", // Pink
-  "#6366F1", // Indigo
-  "#8B5CF6", // Purple
-  "#14B8A6", // Teal
+  "#A78BFA", // Muted purple
+  "#93C5FD", // Soft blue
+  "#6EE7B7", // Pastel green
+  "#FCD34D", // Soft yellow
+  "#FDA4AF", // Pastel red
+  "#F9A8D4", // Soft pink
+  "#A5B4FC", // Pastel indigo
+  "#C4B5FD", // Lavender
+  "#5EEAD4", // Pastel teal
 ];
 
 // Generate insight summary

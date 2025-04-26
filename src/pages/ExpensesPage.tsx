@@ -9,6 +9,7 @@ import { Search, Filter, ShoppingBag, CreditCard, Calendar, Download, ArrowUpDow
 import { useInsights } from "@/hooks/useInsights";
 import { formatDistanceToNow, format } from "date-fns";
 import { formatCurrency } from "@/lib/utils";
+import { COLORS } from "@/data/mockData";
 import {
   Select,
   SelectContent,
@@ -169,7 +170,7 @@ const ExpensesPage = () => {
   const chartData = Object.entries(expensesByCategory).map(([name, value], index) => ({
     name,
     value,
-    color: `hsl(${index * 40}, 70%, 50%)`,
+    color: COLORS[index % COLORS.length],
   }));
 
   // Group expenses by merchant for the bar chart (top 5)
