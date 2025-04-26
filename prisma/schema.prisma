@@ -1,0 +1,80 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../node_modules/.prisma/client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  password      String
+  name          String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  sessions      Session[]
+  gmailAccounts GmailAccount[]
+}
+
+model Session {
+  id        String   @id @default(uuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model GmailAccount {
+  id          String    @id @default(uuid())
+  userId      String
+  email       String    @unique
+  accessToken String?
+  refreshToken String?
+  expiresAt   DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expenses    Expense[]
+  subscriptions Subscription[]
+}
+
+model Expense {
+  id            String       @id @default(uuid())
+  gmailAccountId String
+  amount        Float
+  currency      String       @default("USD")
+  merchant      String
+  category      String?
+  date          DateTime
+  description   String?
+  receiptId     String?      @unique
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  gmailAccount  GmailAccount @relation(fields: [gmailAccountId], references: [id], onDelete: Cascade)
+}
+
+model Subscription {
+  id            String       @id @default(uuid())
+  gmailAccountId String
+  name          String
+  amount        Float
+  currency      String       @default("USD")
+  frequency     String       @default("MONTHLY") // MONTHLY, YEARLY, WEEKLY, etc.
+  category      String?
+  lastBilledAt  DateTime?
+  nextBillingAt DateTime?
+  status        String       @default("ACTIVE") // ACTIVE, CANCELLED, etc.
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  gmailAccount  GmailAccount @relation(fields: [gmailAccountId], references: [id], onDelete: Cascade)
+}

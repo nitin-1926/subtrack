@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Bell, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -10,12 +9,20 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useAuth } from "@/hooks/useAuth";
+import { useNavigate } from "react-router-dom";
 
 export const Header = () => {
-  // In a real app, we would get this from authentication state
-  const user = {
-    name: "Demo User",
-    email: "demo@example.com",
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate('/login');
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
   };
 
   return (
@@ -39,14 +46,14 @@ export const Header = () => {
               <DropdownMenuLabel>My Account</DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem className="flex justify-between">
-                <span>{user.name}</span>
+                <span>{user?.name || 'User'}</span>
               </DropdownMenuItem>
               <DropdownMenuItem className="text-xs text-muted-foreground">
-                {user.email}
+                {user?.email || 'No email'}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>Settings</DropdownMenuItem>
-              <DropdownMenuItem>Log out</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate('/settings')}>Settings</DropdownMenuItem>
+              <DropdownMenuItem onClick={handleLogout}>Log out</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
