@@ -1,9 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useInsights } from "@/hooks/useInsights";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Inbox, RefreshCw, AlertCircle, CheckCircle, Mail, Settings, Filter, Calendar } from "lucide-react";
+import { Inbox, RefreshCw, AlertCircle, CheckCircle, Mail, Settings, Filter, Calendar, ExternalLink } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { formatDistanceToNow } from "date-fns";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -16,9 +16,11 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useGmailSync } from "@/hooks/useGmailSync";
+import { useLocation } from "react-router-dom";
 
 const EmailSyncPage = () => {
-  const { gmailAccounts, syncAccount, connectAccount, disconnectAccount, isLoading } = useInsights();
+  const { gmailAccounts, syncAccount, connectAccount, disconnectAccount, isLoading: insightsLoading } = useInsights();
   const [syncingId, setSyncingId] = useState<string | null>(null);
   const [syncProgress, setSyncProgress] = useState<number>(0);
   const [syncStatus, setSyncStatus] = useState<"idle" | "syncing" | "success" | "error">("idle");
@@ -30,6 +32,30 @@ const EmailSyncPage = () => {
     newsletters: true,
     expenses: true,
     syncDepth: "3months"
+  });
+  
+  // Gmail OAuth integration
+  const location = useLocation();
+  const {
+    isAuthenticated,
+    isLoading,
+    error,
+    startAuthFlow,
+    handleAuthCallback,
+    scanEmails,
+    subscriptionCandidates,
+    disconnect
+  } = useGmailSync({
+    onAuthSuccess: (tokens) => {
+      console.log('Gmail authentication successful');
+      setNewAccountEmail('Gmail Account');
+      setNewAccountName('Gmail');
+      setSyncStatus('success');
+    },
+    onError: (error) => {
+      console.error('Gmail authentication error:', error);
+      setSyncStatus('error');
+    }
   });
 
   const handleSync = async (accountId: string) => {
@@ -49,13 +75,26 @@ const EmailSyncPage = () => {
     }, 300);
     
     try {
-      // Simulate API call
-      await syncAccount(accountId);
-      setSyncStatus("success");
+      if (isAuthenticated) {
+        // Scan emails using Gmail API
+        const results = await scanEmails();
+        console.log('Scan results:', results);
+        
+        // If we have subscription candidates, we can add them to the system
+        if (subscriptionCandidates.length > 0) {
+          // Here you would typically send these to your backend
+          // For now we'll just log them
+          console.log('Found subscription candidates:', subscriptionCandidates);
+        }
+      } else {
+        // Fallback to mock sync if not authenticated with Gmail
+        await syncAccount(accountId);
+      }
       
-      // Ensure progress reaches 100%
+      setSyncStatus("success");
       setSyncProgress(100);
     } catch (error) {
+      console.error('Sync error:', error);
       setSyncStatus("error");
       clearInterval(interval);
     } finally {
@@ -68,15 +107,31 @@ const EmailSyncPage = () => {
   };
 
   const handleConnect = async () => {
-    if (newAccountEmail && newAccountName) {
-      await connectAccount(newAccountEmail, newAccountName);
-      setNewAccountEmail("");
-      setNewAccountName("");
-      setIsDialogOpen(false);
-    }
+    // Start the Gmail OAuth flow
+    startAuthFlow();
   };
+  
+  // Handle OAuth callback
+  useEffect(() => {
+    const query = new URLSearchParams(location.search);
+    const code = query.get('code');
+    
+    if (code) {
+      // Process the OAuth callback
+      handleAuthCallback(code);
+      
+      // Clean up the URL
+      window.history.replaceState({}, document.title, location.pathname);
+    }
+  }, [location, handleAuthCallback]);
 
   const handleDisconnect = async (accountId: string) => {
+    // Disconnect from Gmail API if authenticated
+    if (isAuthenticated) {
+      disconnect();
+    }
+    
+    // Also disconnect from the mock system
     await disconnectAccount(accountId);
   };
 
@@ -94,47 +149,58 @@ const EmailSyncPage = () => {
           <h1 className="text-2xl font-semibold">Email Sync</h1>
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
-              <Button className="flex items-center gap-2">
+              <Button 
+                className="flex items-center gap-2" 
+                disabled={isLoading}
+              >
                 <Mail className="h-4 w-4" />
-                Connect Gmail Account
+                {isLoading ? 'Connecting...' : 'Connect Gmail Account'}
               </Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>Connect Gmail Account</DialogTitle>
                 <DialogDescription>
-                  Enter your Gmail account details to connect and analyze your emails.
+                  Connect your Gmail account to automatically detect subscriptions and analyze your spending.
                 </DialogDescription>
               </DialogHeader>
               <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="email" className="text-right">
-                    Email
-                  </Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={newAccountEmail}
-                    onChange={(e) => setNewAccountEmail(e.target.value)}
-                    className="col-span-3"
-                    placeholder="your.email@gmail.com"
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="name" className="text-right">
-                    Account Name
-                  </Label>
-                  <Input
-                    id="name"
-                    value={newAccountName}
-                    onChange={(e) => setNewAccountName(e.target.value)}
-                    className="col-span-3"
-                    placeholder="Personal, Work, etc."
-                  />
+                <div className="items-center gap-4">
+                  <div className="space-y-4">
+                    <Alert>
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertTitle>Secure OAuth Authentication</AlertTitle>
+                      <AlertDescription>
+                        You'll be redirected to Google to securely authorize access to your Gmail account. We never see or store your password.
+                      </AlertDescription>
+                    </Alert>
+                    
+                    <div className="flex items-center space-x-2">
+                      <CheckCircle className="h-4 w-4 text-green-500" />
+                      <span>Detects subscription emails</span>
+                    </div>
+                    
+                    <div className="flex items-center space-x-2">
+                      <CheckCircle className="h-4 w-4 text-green-500" />
+                      <span>Identifies recurring payments</span>
+                    </div>
+                    
+                    <div className="flex items-center space-x-2">
+                      <CheckCircle className="h-4 w-4 text-green-500" />
+                      <span>Helps you track forgotten subscriptions</span>
+                    </div>
+                  </div>
                 </div>
               </div>
               <DialogFooter>
-                <Button onClick={handleConnect}>Connect Account</Button>
+                <Button
+                  onClick={handleConnect}
+                  disabled={isLoading}
+                  className="w-full"
+                >
+                  {isLoading ? 'Connecting...' : 'Connect with Google'}
+                  {!isLoading && <ExternalLink className="ml-2 h-4 w-4" />}
+                </Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
