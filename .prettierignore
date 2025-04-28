@@ -1,0 +1,10 @@
+.git
+.next
+node_modules
+public
+dist
+build
+coverage
+.vercel
+package-lock.json
+bun.lockb 
