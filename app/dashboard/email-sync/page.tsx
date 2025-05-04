@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
@@ -16,41 +16,113 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Plus, RefreshCw, Trash2, Mail, ExternalLink, AlertCircle, CheckCircle } from 'lucide-react';
-import { useInsightsContext } from '@/components/insights/insights-provider';
+import { useInsights } from '@/hooks/useInsights';
+import { useGmailSync } from '@/hooks/useGmailSync';
 import { format } from 'date-fns';
+import { useSearchParams } from 'next/navigation';
 
 export default function EmailSyncPage() {
-	const { gmailAccounts, connectAccount } = useInsightsContext();
+	const { gmailAccounts, syncAccount, connectAccount, disconnectAccount, isLoading: insightsLoading } = useInsights();
+	const [syncingId, setSyncingId] = useState<string | null>(null);
+	const [syncProgress, setSyncProgress] = useState<number>(0);
+	const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'success' | 'error'>('idle');
+	const [newAccountEmail, setNewAccountEmail] = useState('');
+	const [newAccountName, setNewAccountName] = useState('');
 	const [isDialogOpen, setIsDialogOpen] = useState(false);
-	const [isLoading, setIsLoading] = useState(false);
+	const [syncOptions, setSyncOptions] = useState({
+		subscriptions: true,
+		newsletters: true,
+		expenses: true,
+		syncDepth: '3months',
+	});
 
-	const handleConnect = async () => {
-		setIsLoading(true);
-		// Simulate OAuth process
-		setTimeout(() => {
-			// After successful OAuth, we would create a new account
-			const mockEmail = 'user.oauth@gmail.com';
-			const mockName = 'OAuth User';
-			connectAccount(mockEmail, mockName);
-			setIsLoading(false);
-			setIsDialogOpen(false);
-		}, 1500);
+	// Gmail OAuth integration
+	const searchParams = useSearchParams();
+	const {
+		isAuthenticated,
+		isLoading,
+		error,
+		startAuthFlow,
+		handleAuthCallback,
+		scanEmails,
+		subscriptionCandidates,
+		disconnect,
+	} = useGmailSync({
+		onAuthSuccess: tokens => {
+			console.log('Gmail authentication successful');
+			setNewAccountEmail('Gmail Account');
+			setNewAccountName('Gmail');
+			setSyncStatus('success');
+		},
+		onError: error => {
+			console.error('Gmail authentication error:', error);
+			setSyncStatus('error');
+		},
+	});
+
+	// Handle OAuth callback
+	useEffect(() => {
+		const code = searchParams.get('code');
+		if (code) {
+			handleAuthCallback(code);
+			// Clean up the URL
+			window.history.replaceState({}, document.title, window.location.pathname);
+		}
+	}, [searchParams, handleAuthCallback]);
+
+	const handleSync = async (accountId: string) => {
+		setSyncingId(accountId);
+		setSyncStatus('syncing');
+		setSyncProgress(0);
+
+		const interval = setInterval(() => {
+			setSyncProgress(prev => {
+				if (prev >= 100) {
+					clearInterval(interval);
+					return 100;
+				}
+				return prev + 10;
+			});
+		}, 300);
+
+		try {
+			// Use the scanEmails function from our hook
+			const results = await scanEmails();
+			console.log('Subscription scan results:', results);
+
+			if (subscriptionCandidates.length > 0) {
+				console.log('Found subscription candidates:', subscriptionCandidates);
+				// Here you would typically send these to your backend
+			}
+
+			setSyncStatus('success');
+			setSyncProgress(100);
+		} catch (error) {
+			console.error('Sync error:', error);
+			setSyncStatus('error');
+			clearInterval(interval);
+		} finally {
+			setSyncingId(null);
+			setTimeout(() => {
+				setSyncStatus('idle');
+			}, 3000);
+		}
 	};
 
-	const handleSyncAccount = async (accountId: string) => {
-		setIsLoading(true);
-		// In a real app, this would trigger a sync
-		setTimeout(() => {
-			setIsLoading(false);
-		}, 1500);
+	const handleConnect = async () => {
+		startAuthFlow();
 	};
 
 	const handleDisconnect = async (accountId: string) => {
-		setIsLoading(true);
-		// In a real app, this would disconnect the account
-		setTimeout(() => {
-			setIsLoading(false);
-		}, 1000);
+		disconnect();
+		await disconnectAccount(accountId);
+	};
+
+	const handleSyncOptionChange = (option: keyof typeof syncOptions, value: boolean | string) => {
+		setSyncOptions(prev => ({
+			...prev,
+			[option]: value,
+		}));
 	};
 
 	return (
@@ -161,7 +233,7 @@ export default function EmailSyncPage() {
 												<Button
 													size="sm"
 													variant="outline"
-													onClick={() => handleSyncAccount(account.id)}
+													onClick={() => handleSync(account.id)}
 													disabled={isLoading || !account.connected}
 												>
 													<RefreshCw className="h-4 w-4" />
