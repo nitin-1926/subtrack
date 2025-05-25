@@ -58,10 +58,6 @@ export default function DashboardPage() {
 
 	return (
 		<div className="container-app animate-fade-in">
-			<div className="flex items-center justify-between mb-6">
-				<h1 className="text-2xl font-semibold">Dashboard</h1>
-			</div>
-
 			{/* Insight Stats */}
 			<div className="grid gap-6 md:grid-cols-2 mb-6">
 				<StatCard

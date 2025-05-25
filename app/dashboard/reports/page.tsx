@@ -79,24 +79,21 @@ export default function ReportsPage() {
 
 	return (
 		<div className="container-app animate-fade-in">
-			<div className="flex items-center justify-between mb-6">
-				<h1 className="text-2xl font-semibold">Reports & Analytics</h1>
-				<div className="flex gap-2">
-					<Select value={timeRange} onValueChange={setTimeRange}>
-						<SelectTrigger className="w-[180px]">
-							<SelectValue placeholder="Time Range" />
-						</SelectTrigger>
-						<SelectContent>
-							<SelectItem value="1month">Last Month</SelectItem>
-							<SelectItem value="3months">Last 3 Months</SelectItem>
-							<SelectItem value="6months">Last 6 Months</SelectItem>
-							<SelectItem value="1year">Last Year</SelectItem>
-						</SelectContent>
-					</Select>
-					<Button variant="outline" size="icon">
-						<Download className="h-4 w-4" />
-					</Button>
-				</div>
+			<div className="flex items-center justify-end mb-6 gap-3">
+				<Select value={timeRange} onValueChange={setTimeRange}>
+					<SelectTrigger className="w-[180px]">
+						<SelectValue placeholder="Time Range" />
+					</SelectTrigger>
+					<SelectContent>
+						<SelectItem value="1month">Last Month</SelectItem>
+						<SelectItem value="3months">Last 3 Months</SelectItem>
+						<SelectItem value="6months">Last 6 Months</SelectItem>
+						<SelectItem value="1year">Last Year</SelectItem>
+					</SelectContent>
+				</Select>
+				<Button variant="outline" size="icon">
+					<Download className="h-4 w-4" />
+				</Button>
 			</div>
 
 			<div className="grid gap-6 md:grid-cols-3 mb-6">
