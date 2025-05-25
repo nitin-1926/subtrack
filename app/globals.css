@@ -6,95 +6,133 @@
 
 @layer base {
 	:root {
-		--background: 0 0% 100%;
-		--foreground: 250 10% 15%;
+		--background: rgb(255 255 255);
+		--foreground: rgb(31 31 31);
+		--card: rgb(255 255 255);
+		--card-foreground: rgb(31 31 31);
+		--popover: rgb(255 255 255);
+		--popover-foreground: rgb(31 31 31);
+		--primary: rgb(67 125 251);
+		--primary-foreground: rgb(255 255 255);
+		--secondary: rgb(245 245 245);
+		--secondary-foreground: rgb(31 31 31);
+		--muted: rgb(245 245 245);
+		--muted-foreground: rgb(109 109 109);
+		--accent: rgb(245 245 245);
+		--accent-foreground: rgb(31 31 31);
+		--destructive: rgb(217 48 54);
+		--border: rgb(234 234 234);
+		--input: rgb(234 234 234);
+		--ring: rgb(67 125 251);
+		--chart-1: rgb(67 125 251);
+		--chart-2: rgb(245 245 245);
+		--chart-3: rgb(234 234 234);
+		--chart-4: rgb(109 109 109);
+		--chart-5: rgb(31 31 31);
+		--sidebar: rgb(252 252 252);
+		--sidebar-foreground: rgb(31 31 31);
+		--sidebar-primary: rgb(67 125 251);
+		--sidebar-primary-foreground: rgb(255 255 255);
+		--sidebar-accent: rgb(245 245 245);
+		--sidebar-accent-foreground: rgb(31 31 31);
+		--sidebar-border: rgb(234 234 234);
+		--sidebar-ring: rgb(67 125 251);
 
-		--card: 0 0% 100%;
-		--card-foreground: 250 10% 15%;
-
-		--popover: 0 0% 100%;
-		--popover-foreground: 250 10% 15%;
-
-		--primary: 262 83% 60%;
-		--primary-foreground: 0 0% 100%;
-
-		--secondary: 260 96% 95%;
-		--secondary-foreground: 250 10% 15%;
-
-		--muted: 260 20% 96%;
-		--muted-foreground: 250 10% 50%;
-
-		--accent: 262 83% 60%;
-		--accent-foreground: 0 0% 100%;
-
-		--destructive: 0 84% 60%;
-		--destructive-foreground: 0 0% 100%;
-
-		--border: 240 5% 90%;
-		--input: 240 5% 90%;
-		--ring: 262 83% 82%;
+		--font-sans: 'Geist', 'Geist Fallback', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+		--font-serif: "Geist", "Geist Fallback", ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+		--font-mono: "Geist Mono", "Geist Mono Fallback", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 
 		--radius: 0.5rem;
+		
+		--shadow-2xs: 0 1px 3px 0px rgb(0 0 0 / 0.03);
+		--shadow-xs: 0 1px 3px 0px rgb(0 0 0 / 0.03);
+		--shadow-sm: 0 1px 3px 0px rgb(0 0 0 / 0.05), 0 1px 2px -1px rgb(0 0 0 / 0.05);
+		--shadow: 0 1px 3px 0px rgb(0 0 0 / 0.05), 0 1px 2px -1px rgb(0 0 0 / 0.05);
+		--shadow-md: 0 1px 3px 0px rgb(0 0 0 / 0.05), 0 2px 4px -1px rgb(0 0 0 / 0.05);
+		--shadow-lg: 0 1px 3px 0px rgb(0 0 0 / 0.05), 0 4px 6px -1px rgb(0 0 0 / 0.05);
+		--shadow-xl: 0 1px 3px 0px rgb(0 0 0 / 0.05), 0 8px 10px -1px rgb(0 0 0 / 0.05);
+		--shadow-2xl: 0 1px 3px 0px rgb(0 0 0 / 0.13);
+		
+		/* Color mapping for theme variables */
+		--color-background: var(--background);
+		--color-foreground: var(--foreground);
+		--color-card: var(--card);
+		--color-card-foreground: var(--card-foreground);
+		--color-popover: var(--popover);
+		--color-popover-foreground: var(--popover-foreground);
+		--color-primary: var(--primary);
+		--color-primary-foreground: var(--primary-foreground);
+		--color-secondary: var(--secondary);
+		--color-secondary-foreground: var(--secondary-foreground);
+		--color-muted: var(--muted);
+		--color-muted-foreground: var(--muted-foreground);
+		--color-accent: var(--accent);
+		--color-accent-foreground: var(--accent-foreground);
+		--color-destructive: var(--destructive);
+		--color-border: var(--border);
+		--color-input: var(--input);
+		--color-ring: var(--ring);
+		--color-chart-1: var(--chart-1);
+		--color-chart-2: var(--chart-2);
+		--color-chart-3: var(--chart-3);
+		--color-chart-4: var(--chart-4);
+		--color-chart-5: var(--chart-5);
+		--color-sidebar: var(--sidebar);
+		--color-sidebar-foreground: var(--sidebar-foreground);
+		--color-sidebar-primary: var(--sidebar-primary);
+		--color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+		--color-sidebar-accent: var(--sidebar-accent);
+		--color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+		--color-sidebar-border: var(--sidebar-border);
+		--color-sidebar-ring: var(--sidebar-ring);
 
-		--sidebar-background: 260 96% 95%;
-		--sidebar-foreground: 250 10% 15%;
-		--sidebar-primary: 262 83% 60%;
-		--sidebar-primary-foreground: 0 0% 100%;
-		--sidebar-accent: 260 96% 92%;
-		--sidebar-accent-foreground: 250 10% 15%;
-		--sidebar-border: 260 20% 90%;
-		--sidebar-ring: 262 83% 82%;
-
-		--brand-50: 268, 100%, 97%;
-		--brand-100: 269, 100%, 95%;
-		--brand-200: 269, 100%, 90%;
-		--brand-300: 269, 100%, 85%;
-		--brand-400: 269, 94%, 76%;
-		--brand-500: 269, 94%, 68%;
-		--brand-600: 269, 94%, 60%;
-		--brand-700: 269, 78%, 53%;
-		--brand-800: 269, 67%, 45%;
-		--brand-900: 269, 65%, 37%;
-		--brand-950: 271, 67%, 23%;
+		/* Radius mapping */
+		--radius-sm: calc(var(--radius) - 4px);
+		--radius-md: calc(var(--radius) - 2px);
+		--radius-lg: var(--radius);
+		--radius-xl: calc(var(--radius) + 4px);
 	}
 
 	.dark {
-		--background: 240 10% 10%;
-		--foreground: 0 0% 98%;
-
-		--card: 240 10% 12%;
-		--card-foreground: 0 0% 98%;
-
-		--popover: 240 10% 12%;
-		--popover-foreground: 0 0% 98%;
-
-		--primary: 262 83% 60%;
-		--primary-foreground: 0 0% 100%;
-
-		--secondary: 240 10% 15%;
-		--secondary-foreground: 0 0% 98%;
-
-		--muted: 240 10% 18%;
-		--muted-foreground: 240 5% 65%;
-
-		--accent: 262 83% 60%;
-		--accent-foreground: 0 0% 100%;
-
-		--destructive: 0 62% 40%;
-		--destructive-foreground: 0 0% 98%;
-
-		--border: 240 10% 20%;
-		--input: 240 10% 20%;
-		--ring: 262 83% 40%;
-
-		--sidebar-background: 240 10% 12%;
-		--sidebar-foreground: 0 0% 98%;
-		--sidebar-primary: 262 83% 60%;
-		--sidebar-primary-foreground: 0 0% 100%;
-		--sidebar-accent: 240 10% 15%;
-		--sidebar-accent-foreground: 0 0% 98%;
-		--sidebar-border: 240 10% 20%;
-		--sidebar-ring: 262 83% 40%;
+		--background: rgb(20 20 20); /* #141414 - Primary background */
+		--foreground: rgb(240 240 240); /* #F0F0F0 - Primary font color */
+		--card: rgb(26 26 26); /* #1A1A1A - Secondary background */
+		--card-foreground: rgb(240 240 240); /* #F0F0F0 - Primary font color */
+		--popover-foreground: rgb(240 240 240); /* #F0F0F0 - Primary font color */
+		--primary: rgb(139 92 246); /* #8B5CF6 - Primary button color */
+		--primary-foreground: rgb(255 255 255); /* White text on primary buttons */
+		--secondary: rgb(37 37 37); /* #252525 - Secondary selection and hover */
+		--secondary-foreground: rgb(247 247 247); /* #F7F7F7 - Primary font color */
+		--muted: rgb(37 37 37); /* #252525 - Secondary border color */
+		--muted-foreground: rgb(138 138 139); /* #8A8A8B - Secondary font color */
+		--accent: rgb(32 32 32); /* #202020 - Primary selection and hover */
+		--accent-foreground: rgb(247 247 247); /* #F7F7F7 - Primary font color */
+		--destructive: rgb(239 68 68); /* Error red */
+		--border: rgb(37 37 37); /* #252525 - Secondary border color */
+		--input: rgb(37 37 37); /* #252525 - Secondary border color */
+		--ring: rgb(139 92 246); /* #8B5CF6 - Primary button color */
+		--chart-1: rgb(139 92 246); /* #8B5CF6 - Primary button color */
+		--chart-2: rgb(37 37 37); /* #252525 */
+		--chart-3: rgb(32 32 32); /* #202020 */
+		--chart-4: rgb(138 138 139); /* #8A8A8B */
+		--chart-5: rgb(247 247 247); /* #F7F7F7 */
+		--sidebar: rgb(20 20 20); /* #141414 - Primary background */
+		--sidebar-foreground: rgb(247 247 247); /* #F7F7F7 - Primary font color */
+		--sidebar-primary: rgb(139 92 246); /* #8B5CF6 - Primary button color */
+		--sidebar-primary-foreground: rgb(255 255 255); /* White text on primary buttons */
+		--sidebar-accent: rgb(32 32 32); /* #202020 - Primary selection and hover */
+		--sidebar-accent-foreground: rgb(247 247 247); /* #F7F7F7 - Primary font color */
+		--sidebar-border: rgb(49 49 53); /* #313135 - Primary border color */
+		--sidebar-hover: rgb(50 50 50); /* #323232 - Enhanced sidebar hover - darker and more visible */
+		--sidebar-hover-foreground: rgb(255 255 255); /* White text on hover */
+		--sidebar-active: rgb(95 95 95); /* #5F5F5F - Enhanced active sidebar item - much more visible */
+		--sidebar-active-foreground: rgb(255 255 255); /* White text on active sidebar items */
+		--shadow-sm: 0 1px 3px 0px rgb(0 0 0 / 0.05), 0 1px 2px -1px rgb(0 0 0 / 0.05);
+		--shadow: 0 1px 3px 0px rgb(0 0 0 / 0.05), 0 1px 2px -1px rgb(0 0 0 / 0.05);
+		--shadow-md: 0 1px 3px 0px rgb(0 0 0 / 0.05), 0 2px 4px -1px rgb(0 0 0 / 0.05);
+		--shadow-lg: 0 1px 3px 0px rgb(0 0 0 / 0.05), 0 4px 6px -1px rgb(0 0 0 / 0.05);
+		--shadow-xl: 0 1px 3px 0px rgb(0 0 0 / 0.05), 0 8px 10px -1px rgb(0 0 0 / 0.05);
+		--shadow-2xl: 0 1px 3px 0px rgb(0 0 0 / 0.13);
 	}
 }
 
