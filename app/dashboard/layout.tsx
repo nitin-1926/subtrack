@@ -29,7 +29,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 			<div className="flex-1 overflow-hidden bg-background">
 				<main className="h-full overflow-auto">
 					<div className="h-full p-2">
-						<div className="h-full overflow-hidden bg-card rounded-xl">
+						<div className="h-full overflow-hidden bg-card rounded-xl border border-main-border shadow-sm">
 							<div className="px-6 py-4">
 								<PageHeader />
 								{children}

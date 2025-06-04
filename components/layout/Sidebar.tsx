@@ -62,7 +62,7 @@ export const Sidebar = () => {
 							<Link
 								key={item.name}
 								href={item.to}
-								className={`flex items-center px-3 py-2.5 text-sm rounded-md transition-colors duration-150 ${isActive ? 'bg-sidebar-active text-sidebar-active-foreground font-medium border-l-2 border-sidebar-primary shadow-sm' : 'text-muted-foreground hover:bg-sidebar-hover hover:text-sidebar-hover-foreground hover:border-l-2 hover:border-sidebar-primary/70'}`}
+								className={`flex items-center px-3 py-2.5 text-sm rounded-md transition-all duration-200 ${isActive ? 'bg-sidebar-active text-sidebar-active-foreground font-medium border-l-2 border-sidebar-primary shadow-sm' : 'text-muted-foreground hover:bg-sidebar-hover hover:text-sidebar-hover-foreground hover:border-l-2 hover:border-sidebar-primary/70'}`}
 							>
 								<item.icon className="mr-3 h-4 w-4" />
 								{item.name}

@@ -26,6 +26,7 @@ export type ThemeColors = {
 	accentForeground: string;
 	destructive: string;
 	border: string;
+	mainBorder: string;
 	input: string;
 	ring: string;
 	chart1: string;
@@ -85,6 +86,7 @@ export const defaultTheme: ThemeConfig = {
 		accentForeground: 'rgb(31 31 31)',
 		destructive: 'rgb(217 48 54)',
 		border: 'rgb(234 234 234)',
+		mainBorder: 'rgb(234 234 234)',
 		input: 'rgb(234 234 234)',
 		ring: 'rgb(67 125 251)',
 		chart1: 'rgb(67 125 251)',
@@ -118,6 +120,7 @@ export const defaultTheme: ThemeConfig = {
 		accentForeground: 'rgb(247 247 247)',
 		destructive: 'rgb(239 68 68)',
 		border: 'rgb(37 37 37)',
+		mainBorder: 'rgb(49 49 53)',
 		input: 'rgb(37 37 37)',
 		ring: 'rgb(139 92 246)',
 		chart1: 'rgb(139 92 246)',

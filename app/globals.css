@@ -22,6 +22,7 @@
 		--accent-foreground: rgb(31 31 31);
 		--destructive: rgb(217 48 54);
 		--border: rgb(234 234 234);
+		--main-border: rgb(234 234 234);
 		--input: rgb(234 234 234);
 		--ring: rgb(67 125 251);
 		--chart-1: rgb(67 125 251);
@@ -109,6 +110,7 @@
 		--accent-foreground: rgb(247 247 247); /* #F7F7F7 - Primary font color */
 		--destructive: rgb(239 68 68); /* Error red */
 		--border: rgb(37 37 37); /* #252525 - Secondary border color */
+		--main-border: rgb(49 49 53); /* #313135 - Primary border color */
 		--input: rgb(37 37 37); /* #252525 - Secondary border color */
 		--ring: rgb(139 92 246); /* #8B5CF6 - Primary button color */
 		--chart-1: rgb(139 92 246); /* #8B5CF6 - Primary button color */
