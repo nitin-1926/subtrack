@@ -10,33 +10,23 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "mongodb"
   url      = env("DATABASE_URL")
 }
 
 model User {
-  id            String    @id @default(uuid())
+  id            String    @id @default(auto()) @map("_id") @db.ObjectId
   email         String    @unique
   password      String
   name          String?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
-  sessions      Session[]
   gmailAccounts GmailAccount[]
 }
 
-model Session {
-  id        String   @id @default(uuid())
-  userId    String
-  token     String   @unique
-  expiresAt DateTime
-  createdAt DateTime @default(now())
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-}
-
 model GmailAccount {
-  id          String    @id @default(uuid())
-  userId      String
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  userId      String    @db.ObjectId
   email       String    @unique
   accessToken String?
   refreshToken String?
@@ -49,8 +39,8 @@ model GmailAccount {
 }
 
 model Expense {
-  id            String       @id @default(uuid())
-  gmailAccountId String
+  id            String       @id @default(auto()) @map("_id") @db.ObjectId
+  gmailAccountId String      @db.ObjectId
   amount        Float
   currency      String       @default("USD")
   merchant      String
@@ -64,8 +54,8 @@ model Expense {
 }
 
 model Subscription {
-  id            String       @id @default(uuid())
-  gmailAccountId String
+  id            String       @id @default(auto()) @map("_id") @db.ObjectId
+  gmailAccountId String      @db.ObjectId
   name          String
   amount        Float
   currency      String       @default("USD")

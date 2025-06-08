@@ -76,3 +76,45 @@ export async function logoutUser() {
 		return { error: 'Logout failed' };
 	}
 }
+
+// Utility function to get user by ID (for server-side use)
+export async function getUserById(id: string) {
+	try {
+		const user = await prisma.user.findUnique({
+			where: { id },
+			select: {
+				id: true,
+				email: true,
+				name: true,
+				createdAt: true,
+				updatedAt: true,
+			},
+		});
+
+		return user;
+	} catch (error) {
+		console.error('Error fetching user:', error);
+		return null;
+	}
+}
+
+// Utility function to update user profile
+export async function updateUserProfile(id: string, data: { name?: string; email?: string }) {
+	try {
+		const user = await prisma.user.update({
+			where: { id },
+			data,
+			select: {
+				id: true,
+				email: true,
+				name: true,
+				updatedAt: true,
+			},
+		});
+
+		return { success: true, user };
+	} catch (error) {
+		console.error('Error updating user profile:', error);
+		return { error: 'Failed to update profile' };
+	}
+}
