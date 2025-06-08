@@ -60,10 +60,6 @@ export default function ExpensesPage() {
 
 	return (
 		<div className="container-app animate-fade-in">
-			<div className="flex items-center justify-between mb-6">
-				<h1 className="text-2xl font-semibold">Expenses</h1>
-			</div>
-
 			<div className="flex flex-col md:flex-row gap-6 mb-6">
 				<Card className="flex-1">
 					<CardHeader className="pb-3">

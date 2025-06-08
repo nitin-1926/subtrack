@@ -58,10 +58,6 @@ export default function DashboardPage() {
 
 	return (
 		<div className="container-app animate-fade-in">
-			<div className="flex items-center justify-between mb-6">
-				<h1 className="text-2xl font-semibold">Dashboard</h1>
-			</div>
-
 			{/* Insight Stats */}
 			<div className="grid gap-6 md:grid-cols-2 mb-6">
 				<StatCard
@@ -88,7 +84,7 @@ export default function DashboardPage() {
 				<TabsContent value="overview">
 					<div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
 						{/* Recent Expenses */}
-						<Card className="md:col-span-2 lg:col-span-1">
+						<Card className="md:col-span-2 lg:col-span-1 glass-card">
 							<CardHeader className="pb-2">
 								<CardTitle className="text-lg">Recent Expenses</CardTitle>
 								<CardDescription>Your latest transactions</CardDescription>
@@ -131,7 +127,7 @@ export default function DashboardPage() {
 						</Card>
 
 						{/* Upcoming Subscriptions */}
-						<Card className="md:col-span-2 lg:col-span-1">
+						<Card className="md:col-span-2 lg:col-span-1 glass-card">
 							<CardHeader className="pb-2">
 								<CardTitle className="text-lg">Upcoming Subscriptions</CardTitle>
 								<CardDescription>Due in the next 7 days</CardDescription>
@@ -177,7 +173,7 @@ export default function DashboardPage() {
 						</Card>
 
 						{/* Connected Accounts */}
-						<Card>
+						<Card className="glass-card">
 							<CardHeader className="pb-2">
 								<CardTitle className="text-lg">Connected Accounts</CardTitle>
 								<CardDescription>Your Gmail accounts</CardDescription>

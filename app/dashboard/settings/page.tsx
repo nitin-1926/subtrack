@@ -55,10 +55,6 @@ export default function SettingsPage() {
 
 	return (
 		<div className="container-app animate-fade-in">
-			<div className="flex items-center justify-between mb-6">
-				<h1 className="text-2xl font-semibold">Settings</h1>
-			</div>
-
 			<Tabs defaultValue="profile" className="space-y-6">
 				<TabsList className="grid w-full grid-cols-4 md:w-auto md:inline-flex">
 					<TabsTrigger value="profile">
